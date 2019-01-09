@@ -1,0 +1,13 @@
+# Build directories
+bin/
+debug/
+release/
+
+# VS Code
+.vscode/
+
+# Makefiles
+Makefile*
+
+# QMake stash
+.qmake.stash
