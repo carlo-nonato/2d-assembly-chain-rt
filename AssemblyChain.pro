@@ -8,7 +8,7 @@ DESTDIR = bin
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-CONFIG += debug_and_release
+CONFIG += debug_and_release c++11
 
 QT += widgets gui core
 

@@ -32,8 +32,10 @@ MainWindow::MainWindow() {
             m_simulation->conveyorBelt(), SLOT(setSpeed(double)));
 
     QPushButton *createItemButton = new QPushButton("Create item");
-    connect(createItemButton, &QPushButton::clicked,
-            m_simulation, &Simulation::createItem);
+//     connect(createItemButton, &QPushButton::clicked,
+//             m_simulation, &Simulation::createItem);
+    connect(createItemButton, SIGNAL(clicked()),
+            m_simulation, SLOT(createItem()));
 
     QPushButton *arGrabButton = new QPushButton("Grab");
     connect(arGrabButton, &QPushButton::clicked,

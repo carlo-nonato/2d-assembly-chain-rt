@@ -1,6 +1,5 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-    <file>textures/belt.png</file>
     <file>textures/belt.svg</file>
 </qresource>
 </RCC>
