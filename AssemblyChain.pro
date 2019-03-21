@@ -18,11 +18,15 @@ HEADERS += src/MainWindow.hpp \
            src/ConveyorBelt.hpp \
            src/ItemStack.hpp \
            src/Robot.hpp \
-           src/Simulation.hpp \
+           src/Controller.hpp \
+           src/Simulation.hpp \         
 
 SOURCES += src/main.cpp \
            src/MainWindow.cpp \
            src/ConveyorBelt.cpp \
            src/ItemStack.cpp \
            src/Robot.cpp \
-           src/Simulation.cpp \
+           src/Controller.cpp \
+           src/Simulation.cpp \         
+           
+LIBS += -lpthread -lrt

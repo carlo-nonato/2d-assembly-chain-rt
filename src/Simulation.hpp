@@ -6,7 +6,7 @@
 class ConveyorBelt;
 class Robot;
 
-class Simulation : public QGraphicsScene 
+class Simulation : public QGraphicsScene
 {
     Q_OBJECT
 
@@ -16,8 +16,8 @@ public:
     ConveyorBelt * conveyorBelt() const { return m_conveyorBelt; }
     Robot * anomalyRobot() const { return m_anomalyRobot; }
     Robot * stackingRobot() const { return m_stackingRobot; }
-    QImage frameFromCamera();
-    void start();
+    QImage frameFromCamera(int left = 10, int top = 30);
+    void start(const int speed = 0);
 
 public slots:
     void createItem();

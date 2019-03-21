@@ -2,12 +2,15 @@
 
 #include <QPainter>
 
+#include <cassert>
+
 ConveyorBelt::ConveyorBelt(const QRectF &rect, QGraphicsItem *parent) 
 : QGraphicsRectItem(rect, parent),
   m_level(0),
   m_speed(0) {}
 
 void ConveyorBelt::setSpeed(double speed) {
+    assert(speed >= 0);
     m_speed = speed;
 }
 

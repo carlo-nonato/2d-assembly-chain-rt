@@ -9,8 +9,10 @@
 #include <QTimer>
 
 Simulation::Simulation() {
+    //QT stuff
     setBackgroundBrush(Qt::black);
 
+    //create new conveyor belt from texture
     m_conveyorBelt = new ConveyorBelt(QRectF(0, 0, 300, 600));
     m_conveyorBelt->setTexture(QIcon(":/textures/belt.svg"));
     addItem(m_conveyorBelt);
@@ -49,17 +51,28 @@ void Simulation::createItem() {
     item->setZValue(1);
 }
 
-void Simulation::start() {
+//move conveyor belt
+void Simulation::start(const int speed) {    
     QTimer *timer = new QTimer();
-    connect(timer, &QTimer::timeout, this, &Simulation::advance);
+    //advance: inherited method from QGraphicsScene (needed for moving animation)
+    //every 1000/33 advance is called -> advance simply call advance method on every child class
+    //Simulation::advance() -> ConveyotBelt::advance()
+    //                      -> ItemStack::advance()
+
+
+    connect(timer, &QTimer::timeout, this, &Simulation::advance, Qt::ConnectionType(Qt::QueuedConnection));
+    //about 30 fps movement
     timer->start(1000/33);
+    
+    //start conveyor belt
+    m_conveyorBelt->setSpeed(speed);
 }
 
-QImage Simulation::frameFromCamera() {
+QImage Simulation::frameFromCamera(int left, int top) {
     QImage frame(250, 200, QImage::Format_ARGB32);
     QPainter painter;
     painter.begin(&frame);
-    render(&painter, QRectF(), QRectF(10, 30, 250, 200));
+    render(&painter, QRectF(), QRectF(left, top, 250, 200));
     painter.end();
     return frame;
 }
