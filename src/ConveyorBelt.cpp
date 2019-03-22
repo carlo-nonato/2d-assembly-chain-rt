@@ -2,15 +2,17 @@
 
 #include <QPainter>
 
-#include <cassert>
-
 ConveyorBelt::ConveyorBelt(const QRectF &rect, QGraphicsItem *parent) 
 : QGraphicsRectItem(rect, parent),
   m_level(0),
+  m_turnedOn(false),
   m_speed(0) {}
 
+void ConveyorBelt::turnOn() {
+    m_turnedOn = true;
+}
+
 void ConveyorBelt::setSpeed(double speed) {
-    assert(speed >= 0);
     m_speed = speed;
 }
 
@@ -20,7 +22,7 @@ void ConveyorBelt::setTexture(const QIcon &texture) {
 }
 
 void ConveyorBelt::advance(int step) {
-    if (!step || m_speed == 0)
+    if (!step || !m_turnedOn || m_speed == 0)
         return;
 
     m_level = m_level + m_speed;

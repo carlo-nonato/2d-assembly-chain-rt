@@ -9,10 +9,8 @@
 #include <QTimer>
 
 Simulation::Simulation() {
-    //QT stuff
     setBackgroundBrush(Qt::black);
 
-    //create new conveyor belt from texture
     m_conveyorBelt = new ConveyorBelt(QRectF(0, 0, 300, 600));
     m_conveyorBelt->setTexture(QIcon(":/textures/belt.svg"));
     addItem(m_conveyorBelt);
@@ -39,6 +37,10 @@ Simulation::Simulation() {
     itemStack->moveBy(-200, 400);
 
     setSceneRect(itemsBoundingRect());
+
+    QTimer *timer = new QTimer();
+    connect(timer, &QTimer::timeout, this, &Simulation::advance);
+    timer->start(1000/30); // a new frame every 33.3 ms (30 FPS)
 }
 
 void Simulation::createItem() {
@@ -46,33 +48,19 @@ void Simulation::createItem() {
                                                     m_conveyorBelt);
     item->setPen(Qt::NoPen);
     item->setBrush(Qt::red);
+    
+    // TODO: randomize
     item->setRotation(-90);
     item->moveBy(100, 50);
+
     item->setZValue(1);
 }
 
-//move conveyor belt
-void Simulation::start(const int speed) {    
-    QTimer *timer = new QTimer();
-    //advance: inherited method from QGraphicsScene (needed for moving animation)
-    //every 1000/33 advance is called -> advance simply call advance method on every child class
-    //Simulation::advance() -> ConveyotBelt::advance()
-    //                      -> ItemStack::advance()
-
-
-    connect(timer, &QTimer::timeout, this, &Simulation::advance, Qt::ConnectionType(Qt::QueuedConnection));
-    //about 30 fps movement
-    timer->start(1000/33);
-    
-    //start conveyor belt
-    m_conveyorBelt->setSpeed(speed);
-}
-
-QImage Simulation::frameFromCamera(int left, int top) {
-    QImage frame(250, 200, QImage::Format_ARGB32);
+QImage Simulation::frameFromCamera(int x, int y, int width, int height) {
+    QImage frame(width, height, QImage::Format_ARGB32);
     QPainter painter;
     painter.begin(&frame);
-    render(&painter, QRectF(), QRectF(left, top, 250, 200));
+    render(&painter, QRectF(), QRectF(x, y, width, height));
     painter.end();
     return frame;
 }

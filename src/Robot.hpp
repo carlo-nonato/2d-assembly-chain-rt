@@ -48,7 +48,7 @@ private:
 
     double armRotation() const { return m_arm->rotation(); }
     void setArmRotation(double rotation);
-    QGraphicsItem * itemBelowArm();
+    QGraphicsItem *itemBelowArm();
     void rotateFromTo(double from, double to);
 };
 

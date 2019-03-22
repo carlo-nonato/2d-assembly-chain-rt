@@ -75,7 +75,7 @@ void Robot::grab() {
     m_executing.unlock();
 }
 
-QGraphicsItem * Robot::itemBelowArm() {
+QGraphicsItem *Robot::itemBelowArm() {
     QPointF point(m_arm->rect().right() + 1, m_arm->rect().height()/2);
     for (QGraphicsItem *item : scene()->items(m_arm->mapToScene(point))) {
         if (item != this && item != m_item)

@@ -18,6 +18,7 @@ public:
     void setTexture(const QIcon &texture);
 
 public slots:
+    void turnOn();
     void setSpeed(double speed);
 
 protected:
@@ -25,6 +26,7 @@ protected:
 
 private:
     double m_level;
+    bool m_turnedOn;
     double m_speed;
     QIcon m_texture;
     QPixmap m_tile;

@@ -13,11 +13,10 @@ class Simulation : public QGraphicsScene
 public:
     Simulation();
 
-    ConveyorBelt * conveyorBelt() const { return m_conveyorBelt; }
-    Robot * anomalyRobot() const { return m_anomalyRobot; }
-    Robot * stackingRobot() const { return m_stackingRobot; }
-    QImage frameFromCamera(int left = 10, int top = 30);
-    void start(const int speed = 0);
+    ConveyorBelt *conveyorBelt() { return m_conveyorBelt; }
+    Robot *anomalyRobot() const { return m_anomalyRobot; }
+    Robot *stackingRobot() const { return m_stackingRobot; }
+    QImage frameFromCamera(int x, int y, int width, int height);
 
 public slots:
     void createItem();
