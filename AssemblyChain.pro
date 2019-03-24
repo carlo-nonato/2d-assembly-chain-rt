@@ -29,4 +29,4 @@ SOURCES += src/main.cpp \
            src/Controller.cpp \
            src/Simulation.cpp \         
            
-LIBS += -lpthread -lrt
+LIBS += -lpthread

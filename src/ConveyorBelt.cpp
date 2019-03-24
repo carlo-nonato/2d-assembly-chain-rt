@@ -2,15 +2,12 @@
 
 #include <QPainter>
 
+const double ConveyorBelt::DEFAULT_SPEED = 2;
+
 ConveyorBelt::ConveyorBelt(const QRectF &rect, QGraphicsItem *parent) 
 : QGraphicsRectItem(rect, parent),
   m_level(0),
-  m_turnedOn(false),
-  m_speed(0) {}
-
-void ConveyorBelt::turnOn() {
-    m_turnedOn = true;
-}
+  m_speed(ConveyorBelt::DEFAULT_SPEED) {}
 
 void ConveyorBelt::setSpeed(double speed) {
     m_speed = speed;
@@ -22,7 +19,7 @@ void ConveyorBelt::setTexture(const QIcon &texture) {
 }
 
 void ConveyorBelt::advance(int step) {
-    if (!step || !m_turnedOn || m_speed == 0)
+    if (!step || m_speed == 0)
         return;
 
     m_level = m_level + m_speed;

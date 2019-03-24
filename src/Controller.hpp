@@ -3,12 +3,13 @@
 
 #include <QObject>
 
-#include <pthread.h>
 // #include <semaphore.h>
-// #include <unistd.h>
 
 class Simulation;
 
+/* The Controller class is responsible for driving the two robots in response
+   of the camera inputs. It uses different tasks for object recognition,
+   anomaly detection and for sending commands to the robots simultaneously. */
 class Controller : public QObject
 {
     Q_OBJECT
@@ -16,11 +17,9 @@ class Controller : public QObject
 public:
     Controller(Simulation *simulation);
 
-    void itemCreatorThread();
     void anomalyThread();
     void stackingThread();
 
-    static void *itemCreatorThreadHelper(void *arg);
     static void *anomalyThreadHelper(void *arg);
     static void *stackingThreadHelper(void *arg);
 
@@ -38,15 +37,11 @@ public:
 public slots:
     void start();
 
-signals:
-    void createItem();
-
 private:
     Simulation *m_simulation;
 
     // sem_t m_sem_camera; //camera busy or free
-    // sem_t m_itemspawner; 
-
+    
     // sem_t m_aRobot_item_in_pos; // if item under anomalyR, do recog
     // sem_t m_sRobot_item_in_pos; // if item under stackingR, stack item
 

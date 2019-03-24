@@ -8,6 +8,8 @@
 #include <QPainter>
 #include <QTimer>
 
+#include <QDebug>
+
 Simulation::Simulation() {
     setBackgroundBrush(Qt::black);
 
@@ -38,22 +40,13 @@ Simulation::Simulation() {
 
     setSceneRect(itemsBoundingRect());
 
-    QTimer *timer = new QTimer();
-    connect(timer, &QTimer::timeout, this, &Simulation::advance);
-    timer->start(1000/30); // a new frame every 33.3 ms (30 FPS)
-}
+    QTimer *advanceTimer = new QTimer();
+    connect(advanceTimer, &QTimer::timeout, this, &Simulation::advance);
+    advanceTimer->start(1000/30); // a new frame every 33.3 ms (30 FPS)
 
-void Simulation::createItem() {
-    QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, 50, 70,
-                                                    m_conveyorBelt);
-    item->setPen(Qt::NoPen);
-    item->setBrush(Qt::red);
-    
-    // TODO: randomize
-    item->setRotation(-90);
-    item->moveBy(100, 50);
-
-    item->setZValue(1);
+    QTimer *createTimer = new QTimer();
+    connect(createTimer, &QTimer::timeout, this, &Simulation::createItem);
+    createTimer->start(5000);
 }
 
 QImage Simulation::frameFromCamera(int x, int y, int width, int height) {
@@ -63,4 +56,17 @@ QImage Simulation::frameFromCamera(int x, int y, int width, int height) {
     render(&painter, QRectF(), QRectF(x, y, width, height));
     painter.end();
     return frame;
+}
+
+void Simulation::createItem() {
+    // TODO: randomize shape
+    QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, 50, 70,
+                                                    m_conveyorBelt);
+    item->setPen(Qt::NoPen);
+    item->setBrush(Qt::red);
+
+    item->setRotation(-90);
+    item->moveBy(100, 50);
+
+    item->setZValue(1);
 }

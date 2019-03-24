@@ -4,6 +4,7 @@
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
 #include <QGraphicsScene>
+#include <QMetaObject>
 #include <QPainter>
 #include <QPropertyAnimation>
 
@@ -11,12 +12,14 @@
 
 #include <QDebug>
 
+const double Robot::DEFAULT_ROTATION_SPEED = 90;
+
 Robot::Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle,
              double endAngle, QGraphicsItem *parent) 
 : QGraphicsItem(parent),
   m_baseSize(baseSize),
   m_armSize(armSize),
-  m_rotationSpeed(90),
+  m_rotationSpeed(Robot::DEFAULT_ROTATION_SPEED),
   m_item(nullptr)
 {
     setFlag(QGraphicsItem::ItemHasNoContents);
@@ -27,9 +30,11 @@ Robot::Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle,
     base->setPen(Qt::NoPen);
     base->setBrush(Qt::gray);
 
-    m_arm = new QGraphicsRectItem(QRectF(QPointF(-10, -m_armSize.height()/2),
-                                         m_armSize),
-                                  this);
+    m_arm = new QGraphicsRectItem(
+        QRectF(QPointF(-10, -m_armSize.height()/2), m_armSize),
+        this
+    );
+
     m_arm->setPen(Qt::NoPen);
     m_arm->setBrush(QColor(100, 100, 100));
     m_arm->moveBy(m_baseSize.width()/2, m_baseSize.height()/2);
@@ -62,7 +67,7 @@ void Robot::grab() {
     
     m_item = itemBelowArm();
     // TODO: fix condition (zvalue may not be the best alternative)
-    if (m_item != 0 && m_item->zValue() == 1) {
+    if (m_item != nullptr && m_item->zValue() == 1) {
         QPointF itemPos = m_arm->mapFromItem(m_item, QPointF(0, 0));
         m_item->setParentItem(m_arm);
         m_item->setPos(itemPos);
@@ -81,34 +86,7 @@ QGraphicsItem *Robot::itemBelowArm() {
         if (item != this && item != m_item)
             return item;
     }
-    return 0;
-}
-
-void Robot::rotateToEnd() {
-    rotateFromTo(armRotation(), m_endAngle);
-}
-
-void Robot::rotateToStart() {
-    rotateFromTo(armRotation(), m_startAngle);
-}
-
-void Robot::rotateFromTo(double from, double to) {
-    if(from == to || !m_executing.tryLock())
-        return;
-
-    QPropertyAnimation animation(this, "armRotation");
-    animation.setDuration(abs(m_endAngle - m_startAngle)/m_rotationSpeed*1000);
-    animation.setStartValue(from);
-    animation.setEndValue(to);
-
-    QEventLoop eventLoop;
-    connect(&animation, &QPropertyAnimation::finished,
-            &eventLoop, &QEventLoop::quit);
-
-    animation.start();
-    eventLoop.exec();
-
-    m_executing.unlock();
+    return nullptr;
 }
 
 void Robot::release() {
@@ -130,6 +108,45 @@ void Robot::release() {
         m_item->setParentItem(parent);
     }
     m_item = nullptr;
+
+    m_executing.unlock();
+}
+
+/* Safe to call from non-main thread. By using QMetaObject::invokeMethod,
+   the slot will be executed by the main thread and not by the caller one. */
+void Robot::rotateToEnd() {
+    QMetaObject::invokeMethod(
+        this,
+        "rotateFromTo",
+        Q_ARG(double, armRotation()),
+        Q_ARG(double, m_endAngle)
+    );
+}
+
+void Robot::rotateToStart() {
+    QMetaObject::invokeMethod(
+        this,
+        "rotateFromTo",
+        Q_ARG(double, armRotation()),
+        Q_ARG(double, m_startAngle)
+    );
+}
+
+void Robot::rotateFromTo(double from, double to) {
+    if(from == to || !m_executing.tryLock())
+        return;
+
+    QPropertyAnimation animation(this, "armRotation");
+    animation.setDuration(abs(to - from)/m_rotationSpeed*1000);
+    animation.setStartValue(from);
+    animation.setEndValue(to);
+
+    QEventLoop eventLoop;
+    connect(&animation, &QPropertyAnimation::finished,
+            &eventLoop, &QEventLoop::quit);
+
+    animation.start();
+    eventLoop.exec();
 
     m_executing.unlock();
 }

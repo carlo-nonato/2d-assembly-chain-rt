@@ -1,58 +1,38 @@
 #include "Controller.hpp"
 
-#include "ConveyorBelt.hpp"
+#include "Robot.hpp"
 #include "Simulation.hpp"
 
-#include <iostream>
-// #include <cstdlib>
-// #include <time.h>
+#include <QDebug>
 
 Controller::Controller(Simulation *simulation) {
     m_simulation = simulation;
-
-    /* Link commands to actual actions in the simulation.
-       Needed because of Qt multi thread timers management. */
-    connect(this, &Controller::createItem,
-            m_simulation, &Simulation::createItem);
-
     // sem_init(&m_sem_camera, 0, 1);
-    // sem_init(&m_itemspawner, 0, 0);
 }
 
 void Controller::start() {
-    m_simulation->conveyorBelt()->turnOn();
-
     pthread_t thread;
     pthread_attr_t attr;
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-    pthread_create(&thread, &attr, &itemCreatorThreadHelper, this);
-    // pthread_create(&thread, &attr, &anomalyThreadHelper, this);
-    // pthread_create(&thread, &attr, &stackingThreadHelper, this);
+    pthread_create(&thread, &attr, &anomalyThreadHelper, this);
+    pthread_create(&thread, &attr, &stackingThreadHelper, this);
 
     pthread_attr_destroy(&attr);
 }
 
-void Controller::itemCreatorThread() {
-    // sem_wait(&m_itemspawner);
-
-    emit createItem();
-    // m_simulation->anomalyRobot()->rotateToEnd();
-}
-
 void Controller::anomalyThread() {
-    // Controller *context = (Controller *)arg;
+    m_simulation->anomalyRobot()->rotateToEnd();
     // while (true) {
     //     if (doRecog(context))
     //         grabAndTrash(context);
     // }
 }
 
-void Controller::stackingThread()
-{
-    // Controller *context = (Controller *)arg;
+void Controller::stackingThread() {
+    m_simulation->stackingRobot()->rotateToEnd();
     // while (true) {
     //     mountItem(context);
     // }
@@ -162,17 +142,13 @@ void Controller::stackingThread()
 // }
 
 // Actual pthread threads. They need to be static methods.
-void *Controller::itemCreatorThreadHelper(void *arg) {
-    ((Controller *)arg)->itemCreatorThread();
-    return NULL;
-}
 
 void *Controller::anomalyThreadHelper(void *arg) {
-    ((Controller *)arg)->anomalyThread();
+    ((Controller *) arg)->anomalyThread();
     return NULL;
 }
 
 void *Controller::stackingThreadHelper(void *arg) {
-    ((Controller *)arg)->stackingThread();
+    ((Controller *) arg)->stackingThread();
     return NULL;
 }

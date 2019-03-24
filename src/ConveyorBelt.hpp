@@ -12,13 +12,14 @@ class ConveyorBelt : public QObject, public QGraphicsRectItem
     Q_PROPERTY (double speed MEMBER m_speed READ speed WRITE setSpeed)
 
 public:
+    static const double DEFAULT_SPEED;
+
     ConveyorBelt(const QRectF &rect, QGraphicsItem *parent = nullptr);
     
     double speed() const { return m_speed; }
     void setTexture(const QIcon &texture);
 
 public slots:
-    void turnOn();
     void setSpeed(double speed);
 
 protected:
@@ -26,7 +27,6 @@ protected:
 
 private:
     double m_level;
-    bool m_turnedOn;
     double m_speed;
     QIcon m_texture;
     QPixmap m_tile;

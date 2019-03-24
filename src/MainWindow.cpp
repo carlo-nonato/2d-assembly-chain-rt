@@ -1,20 +1,19 @@
 #include "MainWindow.hpp"
 
-#include "ConveyorBelt.hpp"
+// #include "ConveyorBelt.hpp"
 #include "Simulation.hpp"
 #include "Controller.hpp"
 #include "Robot.hpp"
 
 #include <QDoubleSpinBox>
-#include <QPushButton>
-#include <QHBoxLayout>
 #include <QGraphicsView>
 #include <QGridLayout>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QImage>
 #include <QLabel>
+#include <QPushButton>
 #include <QTimer>
-#include <QApplication>
 
 MainWindow::MainWindow() {
     m_simulation = new Simulation();
@@ -31,18 +30,18 @@ MainWindow::MainWindow() {
     m_anomalyCamera = new QLabel();
     m_stackingCamera = new QLabel();
 
-    QDoubleSpinBox *speedSpinBox = new QDoubleSpinBox();
-    speedSpinBox->setValue(m_simulation->conveyorBelt()->speed());
-    connect(speedSpinBox, SIGNAL(valueChanged(double)),
-            m_simulation->conveyorBelt(), SLOT(setSpeed(double)));
+    // QDoubleSpinBox *speedSpinBox = new QDoubleSpinBox();
+    // speedSpinBox->setValue(m_simulation->conveyorBelt()->speed());
+    // connect(speedSpinBox, SIGNAL(valueChanged(double)),
+    //         m_simulation->conveyorBelt(), SLOT(setSpeed(double)));
 
     QPushButton *startButton = new QPushButton("Start");
     connect(startButton, &QPushButton::clicked,
             m_controller, &Controller::start);
 
-    /*QPushButton *createItemButton = new QPushButton("Create item");
-    connect(createItemButton, &QPushButton::clicked,
-            m_simulation, &Simulation::createItem);
+    // QPushButton *createItemButton = new QPushButton("Create item");
+    // connect(createItemButton, &QPushButton::clicked,
+    //         m_simulation, &Simulation::createItem);
 
     QPushButton *arGrabButton = new QPushButton("Grab");
     connect(arGrabButton, &QPushButton::clicked,
@@ -77,23 +76,23 @@ MainWindow::MainWindow() {
     QPushButton *srReleaseButton = new QPushButton("Release");
     connect(srReleaseButton, &QPushButton::clicked,
             m_simulation->stackingRobot(), &Robot::release);
-    QGroupBox *srControls = new QGroupBox("Stacking Robot");*/
+    QGroupBox *srControls = new QGroupBox("Stacking Robot");
 
-    /*QVBoxLayout *srControlsLayout = new QVBoxLayout();
+    QVBoxLayout *srControlsLayout = new QVBoxLayout();
     srControlsLayout->addWidget(srGrabButton);
     srControlsLayout->addWidget(srRotateToEndButton);
     srControlsLayout->addWidget(srRotateToStartButton);
     srControlsLayout->addWidget(srReleaseButton);
-    srControls->setLayout(srControlsLayout);*/
+    srControls->setLayout(srControlsLayout);
 
     QGridLayout *controlLayout = new QGridLayout();
     controlLayout->addWidget(new QLabel("Conveyor belt speed"), 0, 0);
-    controlLayout->addWidget(speedSpinBox, 0, 1);
+    // controlLayout->addWidget(speedSpinBox, 0, 1);
     controlLayout->addWidget(startButton, 1, 0, 1, 2);
-    /*controlLayout->addWidget(createItemButton, 1, 0, 1, 2);
-    controlLayout->addWidget(arControls, 2, 0, 1, 2);
-    controlLayout->addWidget(srControls, 3, 0, 1, 2);
-    controlLayout->setRowStretch(4, 1);*/
+    // controlLayout->addWidget(createItemButton, 1, 0, 1, 2);
+    // controlLayout->addWidget(arControls, 2, 0, 1, 2);
+    // controlLayout->addWidget(srControls, 3, 0, 1, 2);
+    // controlLayout->setRowStretch(4, 1);*/
 
     QGridLayout *layout = new QGridLayout();
 

@@ -2,8 +2,8 @@
 #define ROBOT_HPP
 
 #include <QGraphicsItem>
-#include <QObject>
 #include <QMutex>
+#include <QObject>
 
 class QGraphicsRectItem;
 
@@ -13,6 +13,8 @@ class Robot : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 
 public:
+    static const double DEFAULT_ROTATION_SPEED;
+
     Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle = 0,
           double endAngle = 180, QGraphicsItem *parent = nullptr);
     
@@ -26,9 +28,9 @@ public:
 
 public slots:
     void grab();
+    void release();
     void rotateToEnd();
     void rotateToStart();
-    void release();
     
 private:
     Q_PROPERTY (double armRotation READ armRotation WRITE setArmRotation)
@@ -48,7 +50,10 @@ private:
 
     double armRotation() const { return m_arm->rotation(); }
     void setArmRotation(double rotation);
+    
     QGraphicsItem *itemBelowArm();
+
+private slots:
     void rotateFromTo(double from, double to);
 };
 
