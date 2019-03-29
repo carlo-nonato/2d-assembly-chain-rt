@@ -257,7 +257,7 @@ QImage MainWindow::doRec() {
             // Get the lowest and the highest cosine
             double mincos = cos.front();
             double maxcos = cos.back();
-
+            
             // Use the degrees obtained above and the number of vertices
             // to determine the shape of the contour
             if (vtc == 4 && mincos >= -0.1 && maxcos <= 0.3) {

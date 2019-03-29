@@ -8,11 +8,11 @@ DESTDIR = bin
 # deprecated API in order to know how to port your code away from it.
 DEFINES += QT_DEPRECATED_WARNINGS
 
-CONFIG += debug_and_release c++11
+CONFIG += debug_and_release c++11 link_pkgconfig
 
 QT += widgets gui core
 
-INCLUDEPATH += /usr/local/include/opencv4/opencv /usr/local/include/opencv4
+PKGCONFIG += opencv4
 
 RESOURCES = AssemblyChain.qrc
 
@@ -31,4 +31,4 @@ SOURCES += src/main.cpp \
            src/Controller.cpp \
            src/Simulation.cpp \         
            
-LIBS += -lpthread `pkg-config --libs opencv4`
+LIBS += -lpthread
