@@ -5,6 +5,8 @@
 
 #include <QDebug>
 
+// #include <iostream>
+
 Controller::Controller(Simulation *simulation) {
     m_simulation = simulation;
     // sem_init(&m_sem_camera, 0, 1);
@@ -26,8 +28,9 @@ void Controller::start() {
 void Controller::anomalyThread() {
     m_simulation->anomalyRobot()->rotateToEnd();
     // while (true) {
-    //     if (doRecog(context))
-    //         grabAndTrash(context);
+    //     if (doRecog())
+    //         grabAndTrash();
+    //     millisleep(700);
     // }
 }
 
@@ -46,18 +49,18 @@ void Controller::stackingThread() {
 // 	nanosleep(&t, NULL);
 // }
 
-//COMMONS
-// QImage Controller::getFrameFromCamera(int left, int top, Controller *c, int robot) {
+// //COMMONS
+// QImage Controller::getFrameFromCamera(int x, int y, int width, int height, int robot) {
 //     std::cout << "Robot " << robot << ": trying to get frame\n";
-//     sem_wait(&c->m_sem_camera);
+//     sem_wait(&m_sem_camera);
 
 //     std::cout << "Robot " << robot << ": camera access granted\n";
 
-//     QImage img = m_simulation->frameFromCamera(left, top);
+//     QImage img = m_simulation->frameFromCamera(x, y, width, height);
 
 //     std::cout << "Robot " << robot << ": frame aquired, releasing camera\n";
 
-//     sem_post(&c->m_sem_camera);
+//     sem_post(&m_sem_camera);
 
 //     return img;
 // }
@@ -82,19 +85,18 @@ void Controller::stackingThread() {
 //             return true;
 //     }
 
-//      return true;
-//  }
+//     return true;
+//   }
 
 //ANOMALY ROBOT
-// bool Controller::doRecog(Controller *c) {
-//     std::cout << "Robot 0: wait for item\n";
-//     sem_post(&c->m_itemspawner);
+// bool Controller::doRecog() {
+//     std::cout << "Robot 0: waiting for item\n";
 
 //     int robot = 0;
 
-//     QImage img = getFrameFromCamera(10, 30, c, robot);
+//     QImage img = getFrameFromCamera(10, 30, 200, 250, robot);
 //     while (!isItemInPos(img, robot, false)) {
-//         img = getFrameFromCamera(10, 30, c, robot);
+//         img = getFrameFromCamera(10, 30, 200, 250, robot);
 //         millisleep(100);
 //     }
 
@@ -107,20 +109,20 @@ void Controller::stackingThread() {
 //     return true;
 // }
 
-// void Controller::grabAndTrash(Controller *c) {
+// void Controller::grabAndTrash() {
 //     std::cout << "Robot 0: wait for grabbing\n";
 //     int robot = 0;
-//     QImage img = getFrameFromCamera(10, 30, c, robot);
+//     QImage img = getFrameFromCamera(10, 30, 200, 250, robot);
 //     while (!isItemInPos(img, robot, true)) {
-//         img = getFrameFromCamera(10, 30, c, robot);
+//         img = getFrameFromCamera(10, 30, 200, 250, robot);
 //         millisleep(100);
 //     }
 //     std::cout << "Robot 0: item in position, start grabbing\n";
 
-//     c->m_simulation->anomalyRobot()->grab();
-//     c->m_simulation->anomalyRobot()->rotateToEnd();
-//     c->m_simulation->anomalyRobot()->release();
-//     c->m_simulation->anomalyRobot()->rotateToStart();
+//     m_simulation->anomalyRobot()->grab();
+//     m_simulation->anomalyRobot()->rotateToEnd();
+//     m_simulation->anomalyRobot()->release();
+//     m_simulation->anomalyRobot()->rotateToStart();
 //     std::cout << "Robot 0: returned to start\n";
 // }
 

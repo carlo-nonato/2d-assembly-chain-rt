@@ -24,14 +24,14 @@ public:
     static void *stackingThreadHelper(void *arg);
 
     //anomaly robot actions
-    // bool doRecog(Controller *context);
-    // void grabAndTrash(Controller *context);
+    // bool doRecog();
+    // void grabAndTrash();
 
     // //stacking robot actions
     // void mountItem(Controller *context);
 
     // //common actions
-    // QImage getFrameFromCamera(int left, int top, Controller *c, int robot);
+    // QImage getFrameFromCamera(int x, int y, int width, int height, int robot);
     // bool isItemInPos(QImage image, int robot, bool catching);
 
 public slots:

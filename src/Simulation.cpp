@@ -10,6 +10,8 @@
 
 #include <QDebug>
 
+#include <random>
+
 Simulation::Simulation() {
     setBackgroundBrush(Qt::black);
 
@@ -59,14 +61,53 @@ QImage Simulation::frameFromCamera(int x, int y, int width, int height) {
 }
 
 void Simulation::createItem() {
-    // TODO: randomize shape
-    QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, 50, 70,
+    // TODO: adjust position with random angle
+
+    // TODO: init these vars in constructor
+    // TODO: add other shapes (trinagles, hexagons, ...)
+
+    // Create random number generators
+    std::random_device dev;
+    std::mt19937 rng(dev()); // the Mersenne Twister
+    std::uniform_int_distribution<std::mt19937::result_type> dist3(1, 3); // distribution in range [1, 3]
+
+    std::uniform_int_distribution<std::mt19937::result_type> distColor(60, 255); // distribution in range [60, 255]
+
+    std::uniform_int_distribution<std::mt19937::result_type> distAngle(0, 359); // distribution in range [0, 359]
+
+    std::uniform_int_distribution<std::mt19937::result_type> distSize(50, 90); // distribution in range [50, 90]
+
+    QColor col(distColor(rng), distColor(rng), distColor(rng), 255);
+
+    if (dist3(rng) == 1) {
+        QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, distSize(rng), distSize(rng),
                                                     m_conveyorBelt);
-    item->setPen(Qt::NoPen);
-    item->setBrush(Qt::red);
+        item->setPen(Qt::NoPen);
+        item->setBrush(col);
 
-    item->setRotation(-90);
-    item->moveBy(100, 50);
+        item->setRotation(-distAngle(rng));
+        item->moveBy(100, 50);
 
-    item->setZValue(1);
+        item->setZValue(1);
+    } else if (dist3(rng) == 2) {
+        QGraphicsEllipseItem *item = new QGraphicsEllipseItem(0, 0, distSize(rng), distSize(rng),
+                                                    m_conveyorBelt);
+        item->setPen(Qt::NoPen);
+        item->setBrush(col);
+
+        item->setRotation(-distAngle(rng));
+        item->moveBy(100, 50);
+
+        item->setZValue(1);
+    } else if (dist3(rng) == 3) {
+        QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, distSize(rng), distSize(rng),
+                                                    m_conveyorBelt);
+        item->setPen(Qt::NoPen);
+        item->setBrush(col);
+
+        item->setRotation(-distAngle(rng));
+        item->moveBy(100, 50);
+
+        item->setZValue(1);
+    }
 }

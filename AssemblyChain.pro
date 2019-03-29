@@ -12,6 +12,8 @@ CONFIG += debug_and_release c++11
 
 QT += widgets gui core
 
+INCLUDEPATH += /usr/local/include/opencv4/opencv /usr/local/include/opencv4
+
 RESOURCES = AssemblyChain.qrc
 
 HEADERS += src/MainWindow.hpp \
@@ -29,4 +31,4 @@ SOURCES += src/main.cpp \
            src/Controller.cpp \
            src/Simulation.cpp \         
            
-LIBS += -lpthread
+LIBS += -lpthread `pkg-config --libs opencv4`
