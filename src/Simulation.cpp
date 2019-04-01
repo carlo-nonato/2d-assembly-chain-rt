@@ -10,9 +10,8 @@
 
 #include <QDebug>
 
-#include <random>
-
-Simulation::Simulation() {
+Simulation::Simulation() : rng(dev()) {
+    
     setBackgroundBrush(Qt::black);
 
     m_conveyorBelt = new ConveyorBelt(QRectF(0, 0, 300, 600));
@@ -67,8 +66,7 @@ void Simulation::createItem() {
     // TODO: add other shapes (trinagles, hexagons, ...)
 
     // Create random number generators
-    std::random_device dev;
-    std::mt19937 rng(dev()); // the Mersenne Twister
+    
     std::uniform_int_distribution<std::mt19937::result_type> dist3(1, 3); // distribution in range [1, 3]
 
     std::uniform_int_distribution<std::mt19937::result_type> distColor(60, 255); // distribution in range [60, 255]
@@ -84,10 +82,15 @@ void Simulation::createItem() {
                                                     m_conveyorBelt);
         item->setPen(Qt::NoPen);
         item->setBrush(col);
+        
+        QTransform t;
+        QPointF xlate = item->boundingRect().topLeft();
+        t.translate(xlate.x(), xlate.y());       
+        t.rotate(-50); //need to be stored somewhere   
+        t.translate(-xlate.x(), -xlate.y());
+        item->setTransform(t);
 
-        item->setRotation(-distAngle(rng));
         item->moveBy(100, 50);
-
         item->setZValue(1);
     } else if (dist3(rng) == 2) {
         QGraphicsEllipseItem *item = new QGraphicsEllipseItem(0, 0, distSize(rng), distSize(rng),
@@ -95,7 +98,14 @@ void Simulation::createItem() {
         item->setPen(Qt::NoPen);
         item->setBrush(col);
 
-        item->setRotation(-distAngle(rng));
+        QTransform t;
+        QPointF xlate = item->boundingRect().center();
+        t.translate(xlate.x(), xlate.y());
+        t.rotate(-50);        
+        t.translate(-xlate.x(), -xlate.y());
+        item->setTransform(t);
+
+        //item->setRotation(-distAngle(rng));
         item->moveBy(100, 50);
 
         item->setZValue(1);
@@ -105,7 +115,15 @@ void Simulation::createItem() {
         item->setPen(Qt::NoPen);
         item->setBrush(col);
 
-        item->setRotation(-distAngle(rng));
+
+        QTransform t;
+        QPointF xlate = item->boundingRect().center();
+        t.translate(xlate.x(), xlate.y());
+        t.rotate(-50);        
+        t.translate(-xlate.x(), -xlate.y());
+        item->setTransform(t);
+
+        //item->setRotation(-distAngle(rng));
         item->moveBy(100, 50);
 
         item->setZValue(1);

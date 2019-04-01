@@ -3,6 +3,8 @@
 
 #include <QGraphicsScene>
 
+#include <random>
+
 class ConveyorBelt;
 class Robot;
 
@@ -24,6 +26,9 @@ private:
     ConveyorBelt *m_conveyorBelt;
     Robot *m_anomalyRobot;
     Robot *m_stackingRobot;
+
+    std::random_device dev;
+    std::mt19937 rng; // the Mersenne Twister
 
 private slots:
     void createItem();

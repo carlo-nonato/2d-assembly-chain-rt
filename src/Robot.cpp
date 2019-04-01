@@ -12,6 +12,8 @@
 
 #include <QDebug>
 
+#include <iostream>
+
 const double Robot::DEFAULT_ROTATION_SPEED = 90;
 
 Robot::Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle,
@@ -71,7 +73,14 @@ void Robot::grab() {
         QPointF itemPos = m_arm->mapFromItem(m_item, QPointF(0, 0));
         m_item->setParentItem(m_arm);
         m_item->setPos(itemPos);
-        m_item->setTransform(QTransform().rotate(-m_arm->rotation()));
+
+        QTransform t;
+        QPointF xlate = m_item->boundingRect().topLeft();
+        t.translate(xlate.x(), xlate.y());        
+        t.rotate(-50); //-50 must be replaced with m_item->getRotation();
+        m_item->setTransform(t);
+
+        //m_item->setTransform(QTransform().rotate(-m_arm->rotation()));
         m_item->setFlag(QGraphicsItem::ItemStacksBehindParent);
     }
     else

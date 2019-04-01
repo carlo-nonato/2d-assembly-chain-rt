@@ -104,7 +104,7 @@ MainWindow::MainWindow() {
     controlLayout->addWidget(startButton, 1, 0, 1, 2);
     controlLayout->addWidget(captureButton, 2, 0, 1, 2);
     // controlLayout->addWidget(createItemButton, 1, 0, 1, 2);
-    // controlLayout->addWidget(arControls, 2, 0, 1, 2);
+    controlLayout->addWidget(arControls, 3, 0, 1, 2);
     // controlLayout->addWidget(srControls, 3, 0, 1, 2);
     // controlLayout->setRowStretch(4, 1);*/
 
@@ -222,7 +222,7 @@ QImage MainWindow::doRec() {
         // Approximate contour with accuracy proportional
         // to the contour perimeter
         // 0.015 experimental value
-        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.015, true);
+        cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.012, true);
 
         cv::Scalar color = cv::Scalar(250, 255, 50);                
         
