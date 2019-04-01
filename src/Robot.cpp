@@ -74,13 +74,8 @@ void Robot::grab() {
         m_item->setParentItem(m_arm);
         m_item->setPos(itemPos);
 
-        QTransform t;
-        QPointF xlate = m_item->boundingRect().topLeft();
-        t.translate(xlate.x(), xlate.y());        
-        t.rotate(-50); //-50 must be replaced with m_item->getRotation();
-        m_item->setTransform(t);
-
-        //m_item->setTransform(QTransform().rotate(-m_arm->rotation()));
+        m_item->setTransform(m_item->transform());
+        
         m_item->setFlag(QGraphicsItem::ItemStacksBehindParent);
     }
     else
