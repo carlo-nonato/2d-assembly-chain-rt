@@ -59,10 +59,19 @@ QImage Simulation::frameFromCamera(int x, int y, int width, int height) {
     return frame;
 }
 
-void Simulation::createItem() {
-    // TODO: adjust position with random angle
+/*
+    Rotate the item around its center while the transform origin is top left
+*/
+static void offsetRotation(qreal angle, QGraphicsItem * i) {
+    QPointF c = i->mapToScene(i->boundingRect().center());
+    i->setRotation(angle);
+    QPointF cNew = i->mapToScene((i->boundingRect()).center());
+    QPointF offset = c - cNew;
+    i->moveBy(offset.x(), offset.y());
+}
 
-    // TODO: init these vars in constructor
+void Simulation::createItem() {
+    // TODO: init these vars in constructor (?)
     // TODO: add other shapes (trinagles, hexagons, ...)
 
     // Create random number generators
@@ -73,60 +82,45 @@ void Simulation::createItem() {
 
     std::uniform_int_distribution<std::mt19937::result_type> distAngle(0, 359); // distribution in range [0, 359]
 
-    std::uniform_int_distribution<std::mt19937::result_type> distSize(50, 90); // distribution in range [50, 90]
+    std::uniform_int_distribution<std::mt19937::result_type> distSize(60, 90); // distribution in range [60, 90]
 
     QColor col(distColor(rng), distColor(rng), distColor(rng), 255);
 
     int choice = distShape(rng);
+    int angle = distAngle(rng);
+    int width = distSize(rng);
+    int height = distSize(rng);
 
     if (choice == 1) {
-        QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, distSize(rng), distSize(rng),
+        QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, width, height,
                                                     m_conveyorBelt);
         item->setPen(Qt::NoPen);
-        item->setBrush(col);
+        item->setBrush(col);                  
         
-        QTransform t;
-        QPointF xlate = item->boundingRect().topLeft();
-        t.translate(xlate.x(), xlate.y());       
-        t.rotate(-distAngle(rng)); 
-        t.translate(-xlate.x(), -xlate.y());
-        item->setTransform(t);        
+        offsetRotation(-angle, item);
 
-        item->moveBy(150, 50);
+        item->moveBy(100, 50);
         item->setZValue(1);
     } else if (choice == 2) {
-        QGraphicsEllipseItem *item = new QGraphicsEllipseItem(0, 0, distSize(rng), distSize(rng),
+        QGraphicsEllipseItem *item = new QGraphicsEllipseItem(0, 0, width, height,
                                                     m_conveyorBelt);
         item->setPen(Qt::NoPen);
         item->setBrush(col);
 
-        QTransform t;
-        QPointF xlate = item->boundingRect().topLeft();
-        t.translate(xlate.x(), xlate.y());
-        t.rotate(-distAngle(rng));        
-        t.translate(-xlate.x(), -xlate.y());
-        item->setTransform(t);
+        offsetRotation(-angle, item); 
 
-        item->moveBy(150, 50);
-
+        item->moveBy(100, 50);
         item->setZValue(1);
     } else if (choice == 3) {
         //quadrato
-        int width = distSize(rng);
         QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, width, width,
                                                     m_conveyorBelt);
         item->setPen(Qt::NoPen);
         item->setBrush(col);
 
-        QTransform t;
-        QPointF xlate = item->boundingRect().topLeft();
-        t.translate(xlate.x(), xlate.y());
-        t.rotate(-distAngle(rng));        
-        t.translate(-xlate.x(), -xlate.y());
-        item->setTransform(t);
+        offsetRotation(-angle, item); 
 
-        item->moveBy(150, 50);
-
+        item->moveBy(100, 50);
         item->setZValue(1);
-    }
+    }    
 }

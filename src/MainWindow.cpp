@@ -18,7 +18,6 @@
 
 #include <opencv4/opencv2/highgui/highgui.hpp>
 #include <opencv4/opencv2/imgproc/imgproc.hpp>
-#include <cmath>
 
 #include <iostream>
 
@@ -269,9 +268,7 @@ QImage MainWindow::doRec() {
             else if (vtc == 5 && mincos >= -0.34 && maxcos <= -0.27)                                
                 setLabel(dst, "PENTAGONO", contours[i]);
             else if (vtc == 6 && mincos >= -0.55 && maxcos <= -0.45)                   
-                setLabel(dst, "ESAGONO", contours[i]);
-            else                                
-                setLabel(dst, "ELLISSE", contours[i]);
+                setLabel(dst, "ESAGONO", contours[i]);           
         }
         else
         {

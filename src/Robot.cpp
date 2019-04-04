@@ -12,8 +12,6 @@
 
 #include <QDebug>
 
-#include <iostream>
-
 const double Robot::DEFAULT_ROTATION_SPEED = 90;
 
 Robot::Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle,
@@ -70,11 +68,10 @@ void Robot::grab() {
     m_item = itemBelowArm();
     // TODO: fix condition (zvalue may not be the best alternative)
     if (m_item != nullptr && m_item->zValue() == 1) {
-        QPointF itemPos = m_arm->mapFromItem(m_item, QPointF(0, 0));
+        QPointF itemPos = m_arm->mapFromItem(m_item, QPointF(0,0));
+
         m_item->setParentItem(m_arm);
         m_item->setPos(itemPos);
-
-        m_item->setTransform(m_item->transform());
         
         m_item->setFlag(QGraphicsItem::ItemStacksBehindParent);
     }
