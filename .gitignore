@@ -5,6 +5,7 @@ release/
 
 # VS Code
 .vscode/
+.clang-format
 
 # Makefiles
 Makefile*

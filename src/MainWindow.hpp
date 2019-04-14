@@ -16,7 +16,6 @@ public:
 
 public slots:
     void updateCameras();
-    QImage doRec();
 
 private:    
     Simulation *m_simulation;

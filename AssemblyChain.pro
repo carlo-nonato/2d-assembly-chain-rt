@@ -17,18 +17,22 @@ PKGCONFIG += opencv4
 RESOURCES = AssemblyChain.qrc
 
 HEADERS += src/MainWindow.hpp \
-           src/ConveyorBelt.hpp \
-           src/ItemStack.hpp \
-           src/Robot.hpp \
            src/Controller.hpp \
-           src/Simulation.hpp \         
+           src/ConveyorBelt.hpp \
+           src/CVUtils.hpp \
+           src/ItemStack.hpp \
+           src/randint.hpp \
+           src/Robot.hpp \
+           src/Simulation.hpp \
 
-SOURCES += src/main.cpp \
-           src/MainWindow.cpp \
+SOURCES += src/Controller.cpp \
            src/ConveyorBelt.cpp \
+           src/CVUtils.cpp \
+           src/main.cpp \
+           src/MainWindow.cpp \
            src/ItemStack.cpp \
+           src/randint.cpp \
            src/Robot.cpp \
-           src/Controller.cpp \
-           src/Simulation.cpp \         
+           src/Simulation.cpp \
            
 LIBS += -lpthread

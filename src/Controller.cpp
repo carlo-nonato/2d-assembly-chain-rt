@@ -2,155 +2,118 @@
 
 #include "Robot.hpp"
 #include "Simulation.hpp"
+#include "CVUtils.hpp"
+
+#include <opencv4/opencv2/highgui/highgui.hpp>
+#include <opencv4/opencv2/imgproc/imgproc.hpp>
 
 #include <QDebug>
 
-// #include <iostream>
+void millisleep(int ms)
+{
+	struct timespec t;
+	t.tv_sec = 0;
+	t.tv_nsec = ms * 1000000;
+	nanosleep(&t, NULL);
+}
 
-Controller::Controller(Simulation *simulation) {
-    m_simulation = simulation;
-    // sem_init(&m_sem_camera, 0, 1);
+Controller::Controller(Simulation *simulation) : m_simulation(simulation) {
+    m_frame = nullptr;
 }
 
 void Controller::start() {
     pthread_t thread;
     pthread_attr_t attr;
 
+    sem_init(&m_anomalySem, 0, 1);
+    sem_init(&m_stackingSem, 0, 1);
+    sem_init(&m_anomalySynch, 0, 0);
+    sem_init(&m_stackingSynch, 0, 0);
+
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
+    pthread_create(&thread, &attr, &updateFrameThreadHelper, this);
     pthread_create(&thread, &attr, &anomalyThreadHelper, this);
-    pthread_create(&thread, &attr, &stackingThreadHelper, this);
+    // pthread_create(&thread, &attr, &stackingThreadHelper, this);
 
     pthread_attr_destroy(&attr);
 }
 
+void Controller::updateFrameThread() {
+    while (true) {
+        sem_wait(&m_anomalySem);
+        sem_wait(&m_stackingSem);
+
+        delete m_frame;
+        m_frame = m_simulation->frameFromCamera(10, 0, 280, 600);
+
+        sem_post(&m_anomalySem);
+        sem_post(&m_stackingSem);
+
+        sem_post(&m_anomalySynch);
+        sem_post(&m_stackingSynch);
+        millisleep(100);
+    }
+}
+
 void Controller::anomalyThread() {
-    m_simulation->anomalyRobot()->rotateToEnd();
-    // while (true) {
-    //     if (doRecog())
-    //         grabAndTrash();
-    //     millisleep(700);
-    // }
+    // TODO: should not be literal
+    int grabPointY = 140;
+
+    while (true) {
+        sem_wait(&m_anomalySynch);
+        sem_wait(&m_anomalySem);
+        // TODO: should not be literal
+        QImage frame = m_frame->copy(0, 90, 280, 280);
+        sem_post(&m_anomalySem);
+
+        cv::Mat src = QImage2Mat(frame);
+        std::vector<std::vector<cv::Point>> contours;
+
+        preprocess(src);
+        cv::findContours(src, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+        for (int i = 0; i < (int) contours.size(); i++) {
+            cv::Rect boundingRect = cv::boundingRect(contours[i]);
+            
+            // TODO: min area should not be literal
+            if (std::fabs(cv::contourArea(contours[i])) < 2800
+                    || boundingRect.y == 0 || boundingRect.y >= grabPointY)
+                continue;
+            
+            Shape shape = shapeDetection(contours[i]);
+            // TODO: check for some kind of anomaly
+            if ((shape == Shape::Ellipse || shape == Shape::Circle)
+                    && boundingRect.y + boundingRect.height/2 >= grabPointY) {
+                m_simulation->anomalyRobot()->grab();
+                m_simulation->anomalyRobot()->rotateToEnd();
+                m_simulation->anomalyRobot()->release();
+                m_simulation->anomalyRobot()->rotateToStart();
+            }
+        }
+    }
 }
 
 void Controller::stackingThread() {
-    m_simulation->stackingRobot()->rotateToEnd();
-    // while (true) {
-    //     mountItem(context);
-    // }
+    while (true) {
+        m_simulation->stackingRobot()->grab();
+        m_simulation->stackingRobot()->rotateToEnd();
+        m_simulation->stackingRobot()->release();
+        m_simulation->stackingRobot()->rotateToStart();
+    }
 }
 
-// void Controller::millisleep(int ms)
-// {
-// 	struct timespec t;
-// 	t.tv_sec = 0;
-// 	t.tv_nsec = ms * 1000000;
-// 	nanosleep(&t, NULL);
-// }
-
-// //COMMONS
-// QImage Controller::getFrameFromCamera(int x, int y, int width, int height, int robot) {
-//     std::cout << "Robot " << robot << ": trying to get frame\n";
-//     sem_wait(&m_sem_camera);
-
-//     std::cout << "Robot " << robot << ": camera access granted\n";
-
-//     QImage img = m_simulation->frameFromCamera(x, y, width, height);
-
-//     std::cout << "Robot " << robot << ": frame aquired, releasing camera\n";
-
-//     sem_post(&m_sem_camera);
-
-//     return img;
-// }
-
-// bool Controller::isItemInPos(QImage image, int robot, bool catching) {
-//     //TODO RECOG FOR OBJECT
-//     if (robot == 0 && catching == false) {
-//         QColor color(image.pixel(image.size().width() / 2, image.size().height() / 2));
-//         if (color.red() > 200)
-//             return true;
-//     }
-//     else if (robot == 0 && catching) {
-//         QColor color(image.pixel(image.size().width() / 2 + 10, image.size().height() - 4));
-//         QColor color2(image.pixel(image.size().width() / 2 + 10, image.size().height() - 35));
-//         if (color.red() > 200 && color2.red() < 100)
-//             return true;
-//     }
-//     else if (robot == 1) {
-//         QColor color(image.pixel(image.size().width() / 2 - 10, image.size().height() - 4));
-//         QColor color2(image.pixel(image.size().width() / 2 - 10, image.size().height() - 20));
-//         if (color.red() > 200 && color2.red() < 100)
-//             return true;
-//     }
-
-//     return true;
-//   }
-
-//ANOMALY ROBOT
-// bool Controller::doRecog() {
-//     std::cout << "Robot 0: waiting for item\n";
-
-//     int robot = 0;
-
-//     QImage img = getFrameFromCamera(10, 30, 200, 250, robot);
-//     while (!isItemInPos(img, robot, false)) {
-//         img = getFrameFromCamera(10, 30, 200, 250, robot);
-//         millisleep(100);
-//     }
-
-//     std::cout << "Robot 0: item in position, scanning for anomalies\n";
-
-//     //do Recog stuff
-
-//     std::cout << "Robot 0: scanning completed\n";
-
-//     return true;
-// }
-
-// void Controller::grabAndTrash() {
-//     std::cout << "Robot 0: wait for grabbing\n";
-//     int robot = 0;
-//     QImage img = getFrameFromCamera(10, 30, 200, 250, robot);
-//     while (!isItemInPos(img, robot, true)) {
-//         img = getFrameFromCamera(10, 30, 200, 250, robot);
-//         millisleep(100);
-//     }
-//     std::cout << "Robot 0: item in position, start grabbing\n";
-
-//     m_simulation->anomalyRobot()->grab();
-//     m_simulation->anomalyRobot()->rotateToEnd();
-//     m_simulation->anomalyRobot()->release();
-//     m_simulation->anomalyRobot()->rotateToStart();
-//     std::cout << "Robot 0: returned to start\n";
-// }
-
-// //STACKING ROBOT
-// void Controller::mountItem(Controller *c) {
-//     std::cout << "Robot 1: wait for mounting\n";
-//     int robot = 1;
-//     QImage img = getFrameFromCamera(10, 230, c, robot);
-//     while (!isItemInPos(img, robot, true)) {
-//         img = getFrameFromCamera(10, 230, c, robot);
-//         millisleep(100);
-//     }
-//     std::cout << "Robot 1: item in position, start mounting\n";
-
-//     c->m_simulation->stackingRobot()->release();
-//     c->m_simulation->stackingRobot()->rotateToStart();
-//     c->m_simulation->stackingRobot()->grab();
-//     c->m_simulation->stackingRobot()->rotateToEnd();
-// }
-
-// Actual pthread threads. They need to be static methods.
-
-void *Controller::anomalyThreadHelper(void *arg) {
+void* Controller::anomalyThreadHelper(void *arg) {
     ((Controller *) arg)->anomalyThread();
-    return NULL;
+    return nullptr;
 }
 
-void *Controller::stackingThreadHelper(void *arg) {
+void* Controller::stackingThreadHelper(void *arg) {
     ((Controller *) arg)->stackingThread();
-    return NULL;
+    return nullptr;
+}
+
+void* Controller::updateFrameThreadHelper(void *arg) {
+    ((Controller *) arg)->updateFrameThread();
+    return nullptr;
 }

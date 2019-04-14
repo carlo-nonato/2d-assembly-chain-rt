@@ -1,7 +1,9 @@
 #include "Simulation.hpp"
 
 #include "ConveyorBelt.hpp"
+#include "CVUtils.hpp"
 #include "ItemStack.hpp"
+#include "randint.hpp"
 #include "Robot.hpp"
 
 #include <QIcon>
@@ -10,8 +12,7 @@
 
 #include <QDebug>
 
-Simulation::Simulation() : rng(dev()) {
-    
+Simulation::Simulation() {
     setBackgroundBrush(Qt::black);
 
     m_conveyorBelt = new ConveyorBelt(QRectF(0, 0, 300, 600));
@@ -50,77 +51,63 @@ Simulation::Simulation() : rng(dev()) {
     createTimer->start(5000);
 }
 
-QImage Simulation::frameFromCamera(int x, int y, int width, int height) {
-    QImage frame(width, height, QImage::Format_ARGB32);
-    QPainter painter;
-    painter.begin(&frame);
-    render(&painter, QRectF(), QRectF(x, y, width, height));
-    painter.end();
+/* Safe to call from non-main thread. By using QMetaObject::invokeMethod,
+   the slot will be executed by the main thread and not by the caller one. */
+QImage* Simulation::frameFromCamera(int x, int y, int width, int height) {
+    QImage* frame; 
+    QMetaObject::invokeMethod(
+        this,
+        "_frameFromCamera",
+        Robot::determineConnectionType(),
+        Q_RETURN_ARG(QImage*, frame),
+        Q_ARG(int, x),
+        Q_ARG(int, y),
+        Q_ARG(int, width),
+        Q_ARG(int, height)
+    );
     return frame;
 }
 
-/*
-    Rotate the item around its center while the transform origin is top left
-*/
-static void offsetRotation(qreal angle, QGraphicsItem * i) {
-    QPointF c = i->mapToScene(i->boundingRect().center());
-    i->setRotation(angle);
-    QPointF cNew = i->mapToScene((i->boundingRect()).center());
-    QPointF offset = c - cNew;
-    i->moveBy(offset.x(), offset.y());
+QImage* Simulation::_frameFromCamera(int x, int y, int width, int height) {
+    // Camera is below the two robots so we don't want them in the way
+    m_anomalyRobot->setVisible(false);
+    m_stackingRobot->setVisible(false);
+
+    QImage *frame = new QImage(width, height, QImage::Format_ARGB32);
+    QPainter painter;
+    painter.begin(frame);
+    render(&painter, QRectF(), QRectF(x, y, width, height));
+    painter.end();
+
+    m_anomalyRobot->setVisible(true);
+    m_stackingRobot->setVisible(true);
+
+    return frame;
 }
 
 void Simulation::createItem() {
-    // TODO: init these vars in constructor (?)
-    // TODO: add other shapes (trinagles, hexagons, ...)
+    QAbstractGraphicsShapeItem *item;
+    QColor color(randint(60, 255), randint(60, 255), randint(60, 255), 255);
 
-    // Create random number generators
-    
-    std::uniform_int_distribution<std::mt19937::result_type> distShape(1, 3); // distribution in range [1, 3]
+    int width = randint(60, 90);
+    int height = randint(60, 90);
 
-    std::uniform_int_distribution<std::mt19937::result_type> distColor(60, 255); // distribution in range [60, 255]
+    if (randint(0, 1) == 0)
+        item = new QGraphicsRectItem(0, 0, width, height, m_conveyorBelt);
+    else
+        item = new QGraphicsEllipseItem(0, 0, width, height, m_conveyorBelt);
 
-    std::uniform_int_distribution<std::mt19937::result_type> distAngle(0, 359); // distribution in range [0, 359]
+    item->setPen(Qt::NoPen);
+    item->setBrush(color);
+    rotateAroundCenter(item, randint(0, 359));
+    item->moveBy(100, -60);
+    item->setZValue(1);
+}
 
-    std::uniform_int_distribution<std::mt19937::result_type> distSize(60, 90); // distribution in range [60, 90]
-
-    QColor col(distColor(rng), distColor(rng), distColor(rng), 255);
-
-    int choice = distShape(rng);
-    int angle = distAngle(rng);
-    int width = distSize(rng);
-    int height = distSize(rng);
-
-    if (choice == 1) {
-        QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, width, height,
-                                                    m_conveyorBelt);
-        item->setPen(Qt::NoPen);
-        item->setBrush(col);                  
-        
-        offsetRotation(-angle, item);
-
-        item->moveBy(100, 50);
-        item->setZValue(1);
-    } else if (choice == 2) {
-        QGraphicsEllipseItem *item = new QGraphicsEllipseItem(0, 0, width, height,
-                                                    m_conveyorBelt);
-        item->setPen(Qt::NoPen);
-        item->setBrush(col);
-
-        offsetRotation(-angle, item); 
-
-        item->moveBy(100, 50);
-        item->setZValue(1);
-    } else if (choice == 3) {
-        //quadrato
-        QGraphicsRectItem *item = new QGraphicsRectItem(0, 0, width, width,
-                                                    m_conveyorBelt);
-        item->setPen(Qt::NoPen);
-        item->setBrush(col);
-
-        offsetRotation(-angle, item); 
-
-        item->moveBy(100, 50);
-        item->setZValue(1);
-    }    
+void Simulation::rotateAroundCenter(QGraphicsItem *item, qreal angle) {
+    QPointF center = item->mapToScene(item->boundingRect().center());
+    item->setRotation(angle);
+    QPointF newCenter = item->mapToScene(item->boundingRect().center());
+    QPointF offset = center - newCenter;
+    item->moveBy(offset.x(), offset.y());
 }

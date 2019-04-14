@@ -20,11 +20,16 @@ public:
     
     QRectF boundingRect() const;
 
+    QPoint grabPoint() const;
+
     double rotationSpeed() const { return m_rotationSpeed; }
     void setRotationSpeed(double rotationSpeed);
+    
     double startAngle() const { return m_startAngle; }
     double endAngle() const { return m_endAngle; }
     void setStartEndAngle(double startAngle, double endAngle);
+
+    static Qt::ConnectionType determineConnectionType();
 
 public slots:
     void grab();
@@ -44,17 +49,19 @@ private:
     double m_endAngle;
     QMutex m_executing;
 
+    double armRotation() const { return m_arm->rotation(); }
+    void setArmRotation(double rotation);
+
     virtual void paint(QPainter *painter,
                        const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
-
-    double armRotation() const { return m_arm->rotation(); }
-    void setArmRotation(double rotation);
     
     QGraphicsItem *itemBelowArm();
 
 private slots:
     void rotateFromTo(double from, double to);
+    void _grab();
+    void _release();
 };
 
 #endif // ROBOT_HPP

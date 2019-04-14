@@ -1,5 +1,6 @@
 #include "Robot.hpp"
 
+#include <QApplication>
 #include <QEventLoop>
 #include <QGraphicsEllipseItem>
 #include <QGraphicsRectItem>
@@ -7,6 +8,7 @@
 #include <QMetaObject>
 #include <QPainter>
 #include <QPropertyAnimation>
+#include <QThread>
 
 #include <cmath>
 
@@ -18,10 +20,11 @@ Robot::Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle,
              double endAngle, QGraphicsItem *parent) 
 : QGraphicsItem(parent),
   m_baseSize(baseSize),
-  m_armSize(armSize),
-  m_rotationSpeed(Robot::DEFAULT_ROTATION_SPEED),
-  m_item(nullptr)
+  m_armSize(armSize)
 {
+    m_rotationSpeed = Robot::DEFAULT_ROTATION_SPEED;
+    m_item = nullptr;
+
     setFlag(QGraphicsItem::ItemHasNoContents);
     
     QGraphicsRectItem *base = new QGraphicsRectItem(
@@ -52,6 +55,11 @@ QRectF Robot::boundingRect() const {
     return childrenBoundingRect();
 }
 
+QPoint Robot::grabPoint() const {
+    QRect br = boundingRect().toAlignedRect();
+    return QPoint(br.right(), br.height()/2);
+}
+
 void Robot::setRotationSpeed(double rotationSpeed) {
     m_rotationSpeed = abs(rotationSpeed);
 }
@@ -61,7 +69,13 @@ void Robot::setStartEndAngle(double startAngle, double endAngle) {
     m_endAngle = endAngle;
 }
 
-void Robot::grab() {
+Qt::ConnectionType Robot::determineConnectionType() {
+    if (QThread::currentThread() == QApplication::instance()->thread()) 
+        return Qt::DirectConnection;
+    return Qt::BlockingQueuedConnection;
+}
+
+void Robot::_grab() {
     if (m_item != nullptr || !m_executing.tryLock())
         return;
     
@@ -72,7 +86,7 @@ void Robot::grab() {
 
         m_item->setParentItem(m_arm);
         m_item->setPos(itemPos);
-        
+        m_item->setTransform(QTransform().rotate(-m_arm->rotation())); // fix stacking robot problems
         m_item->setFlag(QGraphicsItem::ItemStacksBehindParent);
     }
     else
@@ -90,7 +104,7 @@ QGraphicsItem *Robot::itemBelowArm() {
     return nullptr;
 }
 
-void Robot::release() {
+void Robot::_release() {    
     if (m_item == nullptr || !m_executing.tryLock())
         return;
     
@@ -113,12 +127,40 @@ void Robot::release() {
     m_executing.unlock();
 }
 
+void Robot::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+                  QWidget *widget) {
+    Q_UNUSED(painter);
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+}
+
+void Robot::setArmRotation(double rotation) {
+    m_arm->setRotation(rotation);
+}
+
 /* Safe to call from non-main thread. By using QMetaObject::invokeMethod,
    the slot will be executed by the main thread and not by the caller one. */
+void Robot::grab() {
+     QMetaObject::invokeMethod(
+        this,
+        "_grab",
+        determineConnectionType()
+    );  
+}
+
+void Robot::release() {
+    QMetaObject::invokeMethod(
+        this,
+        "_release",
+        determineConnectionType()
+    );    
+}
+
 void Robot::rotateToEnd() {
     QMetaObject::invokeMethod(
         this,
         "rotateFromTo",
+        determineConnectionType(),
         Q_ARG(double, armRotation()),
         Q_ARG(double, m_endAngle)
     );
@@ -128,6 +170,7 @@ void Robot::rotateToStart() {
     QMetaObject::invokeMethod(
         this,
         "rotateFromTo",
+        determineConnectionType(),
         Q_ARG(double, armRotation()),
         Q_ARG(double, m_startAngle)
     );
@@ -150,15 +193,4 @@ void Robot::rotateFromTo(double from, double to) {
     eventLoop.exec();
 
     m_executing.unlock();
-}
-
-void Robot::setArmRotation(double rotation) {
-    m_arm->setRotation(rotation);
-}
-
-void Robot::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-                  QWidget *widget) {
-    Q_UNUSED(painter);
-    Q_UNUSED(option);
-    Q_UNUSED(widget);
 }
