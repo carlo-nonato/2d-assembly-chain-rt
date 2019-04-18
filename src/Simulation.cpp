@@ -9,6 +9,7 @@
 #include <QIcon>
 #include <QPainter>
 #include <QTimer>
+#include <cassert>
 
 #include <QDebug>
 
@@ -47,7 +48,7 @@ Simulation::Simulation() {
     advanceTimer->start(1000/30); // a new frame every 33.3 ms (30 FPS)
 
     QTimer *createTimer = new QTimer();
-    connect(createTimer, &QTimer::timeout, this, &Simulation::createItem);
+    connect(createTimer,  &QTimer::timeout, this, [this]{ createItem(); });
     createTimer->start(5000);
 }
 
@@ -69,28 +70,28 @@ QImage* Simulation::frameFromCamera(int x, int y, int width, int height) {
 }
 
 QImage* Simulation::_frameFromCamera(int x, int y, int width, int height) {
-    // Camera is below the two robots so we don't want them in the way
-    m_anomalyRobot->setVisible(false);
-    m_stackingRobot->setVisible(false);
-
     QImage *frame = new QImage(width, height, QImage::Format_ARGB32);
     QPainter painter;
     painter.begin(frame);
+    painter.setRenderHint(QPainter::Antialiasing);
     render(&painter, QRectF(), QRectF(x, y, width, height));
     painter.end();
-
-    m_anomalyRobot->setVisible(true);
-    m_stackingRobot->setVisible(true);
-
     return frame;
 }
 
-void Simulation::createItem() {
+void Simulation::createItem(int minWidth, int minHeight, int maxWidth, int maxHeight) {
+    assert(minWidth >= 60 && minHeight >= 60 && maxWidth >=60 && maxHeight >= 60
+        && minWidth <= maxWidth && minHeight <= maxHeight);
+    
     QAbstractGraphicsShapeItem *item;
     QColor color(randint(60, 255), randint(60, 255), randint(60, 255), 255);
 
-    int width = randint(60, 90);
-    int height = randint(60, 90);
+    int width = randint(minWidth, maxWidth);
+    int height = randint(minHeight, maxHeight);
+    
+    // The minimum calculable area is the circle's one
+    // A = PI * squared(r)
+    m_minItemArea = M_PI * (minWidth/2 * minWidth/2);    
 
     if (randint(0, 1) == 0)
         item = new QGraphicsRectItem(0, 0, width, height, m_conveyorBelt);
@@ -105,9 +106,9 @@ void Simulation::createItem() {
 }
 
 void Simulation::rotateAroundCenter(QGraphicsItem *item, qreal angle) {
-    QPointF center = item->mapToScene(item->boundingRect().center());
+    QPointF center = item->mapToParent(item->boundingRect().center());
     item->setRotation(angle);
-    QPointF newCenter = item->mapToScene(item->boundingRect().center());
+    QPointF newCenter = item->mapToParent(item->boundingRect().center());
     QPointF offset = center - newCenter;
     item->moveBy(offset.x(), offset.y());
 }

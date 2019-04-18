@@ -16,6 +16,12 @@
 #include <QTimer>
 
 MainWindow::MainWindow() {
+    // Calc DPI scale factor to adjust font size in high DPI monitors
+    double scaleFactor = physicalDpiX() / double(logicalDpiX()); 
+    QFont f;
+    f.setPointSizeF(f.pointSizeF() * scaleFactor);
+    setFont(f);
+
     m_simulation = new Simulation();
     
     m_controller = new Controller(m_simulation);
@@ -113,6 +119,7 @@ MainWindow::MainWindow() {
 void MainWindow::updateCameras() {
     QImage *frame = m_simulation->frameFromCamera(10, 0, 280, 600);
     m_anomalyCamera->setPixmap(QPixmap::fromImage(frame->copy(0, 90, 280, 280)));
+    m_stackingCamera->setPixmap(QPixmap::fromImage(frame->copy(0, 280, 280, 280)));
     delete frame;
 
     // QImage frame2 = m_simulation->frameFromCamera(10, 240, 300, 250);

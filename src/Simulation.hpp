@@ -21,6 +21,12 @@ public:
     Robot *anomalyRobot() { return m_anomalyRobot; }
     Robot *stackingRobot() { return m_stackingRobot; }
     
+    /*
+     * Return the minimum calculable area with an epsilon error
+    */
+    int minItemArea(double epsilon = 0) { return (m_minItemArea - m_minItemArea * epsilon); }
+    static void rotateAroundCenter(QGraphicsItem *item, qreal angle);
+
 public slots:
     QImage* frameFromCamera(int x, int y, int width, int height);
 
@@ -28,11 +34,10 @@ private:
     ConveyorBelt *m_conveyorBelt;
     Robot *m_anomalyRobot;
     Robot *m_stackingRobot;
-
-    static void rotateAroundCenter(QGraphicsItem *item, qreal angle);
+    int m_minItemArea = 3600;    
 
 private slots:
-    void createItem();
+    void createItem(int minWidth = 60, int minHeight = 60, int maxWidth = 90, int maxHeight = 90);
     QImage* _frameFromCamera(int x, int y, int width, int height);
 };
 

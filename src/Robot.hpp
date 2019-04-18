@@ -29,6 +29,8 @@ public:
     double endAngle() const { return m_endAngle; }
     void setStartEndAngle(double startAngle, double endAngle);
 
+    void setChildItemRotation(const double angle);
+
     static Qt::ConnectionType determineConnectionType();
 
 public slots:
@@ -40,6 +42,8 @@ public slots:
 private:
     Q_PROPERTY (double armRotation READ armRotation WRITE setArmRotation)
 
+    Q_PROPERTY (double childItemRotation READ childItemRotation WRITE _setChildItemRotation)
+
     QSizeF m_baseSize;
     QSizeF m_armSize;
     QGraphicsRectItem *m_arm;
@@ -49,8 +53,13 @@ private:
     double m_endAngle;
     QMutex m_executing;
 
+    double m_childItemRotation = 0;
+
     double armRotation() const { return m_arm->rotation(); }
     void setArmRotation(double rotation);
+
+    double childItemRotation() const; 
+    void _setChildItemRotation(const double angle);
 
     virtual void paint(QPainter *painter,
                        const QStyleOptionGraphicsItem *option,

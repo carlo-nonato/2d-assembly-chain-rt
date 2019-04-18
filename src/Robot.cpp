@@ -1,4 +1,5 @@
 #include "Robot.hpp"
+#include "Simulation.hpp"
 
 #include <QApplication>
 #include <QEventLoop>
@@ -14,7 +15,7 @@
 
 #include <QDebug>
 
-const double Robot::DEFAULT_ROTATION_SPEED = 90;
+const double Robot::DEFAULT_ROTATION_SPEED = 260;
 
 Robot::Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle,
              double endAngle, QGraphicsItem *parent) 
@@ -74,6 +75,19 @@ Qt::ConnectionType Robot::determineConnectionType() {
         return Qt::DirectConnection;
     return Qt::BlockingQueuedConnection;
 }
+
+double Robot::childItemRotation() const { 
+    return (m_item == nullptr) ? 0 : m_item->rotation();
+}
+
+void Robot::_setChildItemRotation(const double angle) {
+    if (m_item != nullptr)
+        Simulation::rotateAroundCenter(m_item, angle);
+}
+
+ void Robot::setChildItemRotation(const double angle) {
+    m_childItemRotation = round(angle * 100) / 100.;
+ }
 
 void Robot::_grab() {
     if (m_item != nullptr || !m_executing.tryLock())
@@ -181,6 +195,7 @@ void Robot::rotateFromTo(double from, double to) {
         return;
 
     QPropertyAnimation animation(this, "armRotation");
+    QPropertyAnimation itemAnimation(this, "childItemRotation");
     animation.setDuration(abs(to - from)/m_rotationSpeed*1000);
     animation.setStartValue(from);
     animation.setEndValue(to);
@@ -188,6 +203,15 @@ void Robot::rotateFromTo(double from, double to) {
     QEventLoop eventLoop;
     connect(&animation, &QPropertyAnimation::finished,
             &eventLoop, &QEventLoop::quit);
+
+    if (m_childItemRotation != 0) {
+        itemAnimation.setDuration(abs(to - from)/m_rotationSpeed*1000);
+        itemAnimation.setStartValue(0);
+        itemAnimation.setEndValue(m_childItemRotation);
+        connect(&itemAnimation, &QPropertyAnimation::finished,
+            &eventLoop, &QEventLoop::quit);
+        itemAnimation.start();
+    }
 
     animation.start();
     eventLoop.exec();
