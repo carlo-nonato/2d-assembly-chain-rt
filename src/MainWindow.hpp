@@ -7,6 +7,8 @@ class Simulation;
 class Controller;
 class QLabel;
 
+/** Main window. It shows the simulation and the points of view of the two
+ *  robots. It gives the ability to the user to start the controller. */ 
 class MainWindow : public QMainWindow 
 {
     Q_OBJECT
@@ -15,9 +17,10 @@ public:
     MainWindow();
 
 public slots:
-    void updateCameras();
+    void updateAnomalyCamera(); 
+    void updateStackingCamera();
 
-private:    
+private:
     Simulation *m_simulation;
     Controller *m_controller;
     QLabel *m_anomalyCamera;

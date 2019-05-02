@@ -1,42 +1,46 @@
 #ifndef CONTROLLER_HPP
 #define CONTROLLER_HPP
 
+#include <QImage>
 #include <QObject>
 
 #include <semaphore.h>
 
 class Simulation;
-class QImage;
 
 /**
  * The Controller class is responsible for driving the two robots in response
  * of the camera inputs. It uses different tasks for object recognition,
- * anomaly detection and for sending commands to the robots simultaneously.
- */
+ * anomaly detection and for sending commands to the robots simultaneously. */
 class Controller : public QObject
 {
     Q_OBJECT
 
 public:
-    /** Create a controller and attach it to a simulation. */ 
+    static void* anomalyThreadHelper(void *arg);
+    static void* stackingThreadHelper(void *arg);
+    static void* updateFrameThreadHelper(void *arg);
+
     Controller(Simulation *simulation);
 
     void anomalyThread();
     void stackingThread();
     void updateFrameThread();
 
-    static void *anomalyThreadHelper(void *arg);
-    static void *stackingThreadHelper(void *arg);
-    static void *updateFrameThreadHelper(void *arg);
+    QImage anomalyFrame() const { return m_anomalyFrame; }
+    QImage stackingFrame() const { return m_stackingFrame; };
 
 public slots:
-    /** Starts the controller. */
     void start();
 
+signals:
+    void anomalyFrameUpdated();
+    void stackingFrameUpdated();
+
 private:
-    /** The simulation that this controller is attached to. */
+    QImage m_anomalyFrame;
+    QImage m_stackingFrame;
     Simulation *m_simulation;
-    QImage *m_frame;
     sem_t m_anomalySem;
     sem_t m_stackingSem;
     sem_t m_anomalySynch;

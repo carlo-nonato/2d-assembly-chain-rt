@@ -1,7 +1,8 @@
 #include "Simulation.hpp"
 
 #include "ConveyorBelt.hpp"
-#include "CVUtils.hpp"
+#include "cvutils.hpp"
+#include "graphicsutils.hpp"
 #include "ItemStack.hpp"
 #include "randint.hpp"
 #include "Robot.hpp"
@@ -9,9 +10,6 @@
 #include <QIcon>
 #include <QPainter>
 #include <QTimer>
-#include <cassert>
-
-#include <QDebug>
 
 Simulation::Simulation() {
     setBackgroundBrush(Qt::black);
@@ -27,7 +25,7 @@ Simulation::Simulation() {
 
     m_anomalyRobot = new Robot(QSizeF(40, 60), QSizeF(160, 20));
     addItem(m_anomalyRobot);
-    m_anomalyRobot->moveBy(-40, 200);
+    m_anomalyRobot->moveBy(-40, 150);
     m_anomalyRobot->setZValue(2);
 
     m_stackingRobot = new Robot(QSizeF(40, 60), QSizeF(160, 20), 180, 0);
@@ -52,24 +50,39 @@ Simulation::Simulation() {
     createTimer->start(5000);
 }
 
-/* Safe to call from non-main thread. By using QMetaObject::invokeMethod,
-   the slot will be executed by the main thread and not by the caller one. */
-QImage* Simulation::frameFromCamera(int x, int y, int width, int height) {
+void Simulation::setItemSizeRange(int minWidth, int minHeight, int maxWidth,
+                                  int maxHeight) {
+    m_minItemWidth = minWidth;
+    m_minItemHeight = minHeight;
+    m_maxItemWidth = maxWidth;
+    m_maxItemHeight = maxHeight;
+}
+
+int Simulation::minItemArea() const {
+    // The minimum area is the circle's one -> A = PI*squared(r)
+    return M_PI*(pow(m_minItemWidth/2, 2));
+}
+
+/* Safe to call from non-main thread.
+   By using QMetaObject::invokeMethod the slot will be executed by the main 
+   thread and not by the caller one. */
+QImage* Simulation::frameFromCamera() {
     QImage* frame; 
     QMetaObject::invokeMethod(
         this,
         "_frameFromCamera",
         Robot::determineConnectionType(),
-        Q_RETURN_ARG(QImage*, frame),
-        Q_ARG(int, x),
-        Q_ARG(int, y),
-        Q_ARG(int, width),
-        Q_ARG(int, height)
+        Q_RETURN_ARG(QImage*, frame)
     );
     return frame;
 }
 
-QImage* Simulation::_frameFromCamera(int x, int y, int width, int height) {
+QImage* Simulation::_frameFromCamera() {
+    double x = conveyorBelt()->x() + conveyorBelt()->barsWidth();
+    double y = conveyorBelt()->y();
+    double width = conveyorBelt()->usableWidth();
+    double height = conveyorBelt()->rect().height();
+    
     QImage *frame = new QImage(width, height, QImage::Format_ARGB32);
     QPainter painter;
     painter.begin(frame);
@@ -79,19 +92,12 @@ QImage* Simulation::_frameFromCamera(int x, int y, int width, int height) {
     return frame;
 }
 
-void Simulation::createItem(int minWidth, int minHeight, int maxWidth, int maxHeight) {
-    assert(minWidth >= 60 && minHeight >= 60 && maxWidth >=60 && maxHeight >= 60
-        && minWidth <= maxWidth && minHeight <= maxHeight);
-    
+void Simulation::createItem() {   
     QAbstractGraphicsShapeItem *item;
     QColor color(randint(60, 255), randint(60, 255), randint(60, 255), 255);
 
-    int width = randint(minWidth, maxWidth);
-    int height = randint(minHeight, maxHeight);
-    
-    // The minimum calculable area is the circle's one
-    // A = PI * squared(r)
-    m_minItemArea = M_PI * (minWidth/2 * minWidth/2);    
+    int width = randint(m_minItemWidth, m_maxItemWidth);
+    int height = randint(m_minItemHeight, m_maxItemHeight);
 
     if (randint(0, 1) == 0)
         item = new QGraphicsRectItem(0, 0, width, height, m_conveyorBelt);
@@ -103,12 +109,4 @@ void Simulation::createItem(int minWidth, int minHeight, int maxWidth, int maxHe
     rotateAroundCenter(item, randint(0, 359));
     item->moveBy(100, -60);
     item->setZValue(1);
-}
-
-void Simulation::rotateAroundCenter(QGraphicsItem *item, qreal angle) {
-    QPointF center = item->mapToParent(item->boundingRect().center());
-    item->setRotation(angle);
-    QPointF newCenter = item->mapToParent(item->boundingRect().center());
-    QPointF offset = center - newCenter;
-    item->moveBy(offset.x(), offset.y());
 }

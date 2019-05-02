@@ -12,6 +12,8 @@ enum Shape {None, Triangle, Square, Rect, Pentagon, Hexagon, Circle, Ellipse};
 /** Convert a Qt image to an OpenCV image. */
 cv::Mat QImage2Mat(const QImage &image);
 
+QImage Mat2QImage(const cv::Mat &mat);
+
 /**
  * Preprocess the image by improving contrast and brightness for better
  * results in the object recognition phase.

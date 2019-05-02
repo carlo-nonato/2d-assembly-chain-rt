@@ -1,6 +1,4 @@
-#include "CVUtils.hpp"
-
-#include <QDebug>
+#include "cvutils.hpp"
 
 cv::Mat QImage2Mat(const QImage &image) {
     cv::Mat mat = cv::Mat(image.height(), image.width(), CV_8UC4,
@@ -9,6 +7,11 @@ cv::Mat QImage2Mat(const QImage &image) {
     int from_to[] = {0, 0, 1, 1, 2, 2};
     cv::mixChannels(&mat, 1, &mat2, 1, from_to, 3);
     return mat2;
+}
+
+QImage Mat2QImage(const cv::Mat &mat) {
+    return QImage((uchar*) mat.data, mat.cols, mat.rows, mat.step,
+                  QImage::Format_RGB888).rgbSwapped();
 }
 
 void preprocess(cv::Mat &src) {
@@ -33,9 +36,9 @@ void preprocess(cv::Mat &src) {
 }
 
 Shape shapeDetection(std::vector<cv::Point> contour) {
-    std::vector<cv::Point> approx;
     cv::Mat contourMat(contour);
 
+    std::vector<cv::Point> approx;
     cv::approxPolyDP(contourMat, approx,
                      cv::arcLength(contourMat, true)*0.012, true);
 
@@ -86,7 +89,7 @@ double angle(cv::Point pt1, cv::Point pt2, cv::Point pt0) {
 	double dx2 = pt2.x - pt0.x;
 	double dy2 = pt2.y - pt0.y;
     return (dx1*dx2 + dy1*dy2)/sqrt((dx1*dx1 + dy1*dy1)*(dx2*dx2 + dy2*dy2) +
-           1e-10);
+            1e-10);
 }
 
 void setLabel(cv::Mat &image, std::string label,

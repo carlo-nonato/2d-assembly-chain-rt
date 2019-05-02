@@ -1,22 +1,19 @@
 #include "Controller.hpp"
 
+#include "ConveyorBelt.hpp"
+#include "cvutils.hpp"
 #include "Robot.hpp"
 #include "Simulation.hpp"
-#include "CVUtils.hpp"
-
-#include <QDebug>
 
 void millisleep(int ms)
 {
 	struct timespec t;
 	t.tv_sec = 0;
-	t.tv_nsec = ms * 1000000;
+	t.tv_nsec = ms*1000000;
 	nanosleep(&t, NULL);
 }
 
-Controller::Controller(Simulation *simulation) : m_simulation(simulation) {
-    m_frame = nullptr;
-}
+Controller::Controller(Simulation *simulation) : m_simulation(simulation) {}
 
 void Controller::start() {
     pthread_t thread;
@@ -38,132 +35,143 @@ void Controller::start() {
 }
 
 void Controller::updateFrameThread() {
-    while (true) {
-        sem_wait(&m_anomalySem);
-        sem_wait(&m_stackingSem);
+    QRectF anomalySBR = m_simulation->anomalyRobot()->sceneBoundingRect();
+    QRectF stackingSBR = m_simulation->stackingRobot()->sceneBoundingRect();
+    double anomalyGrabY = anomalySBR.center().y();
+    double stackingGrabY = stackingSBR.center().y();
+    double frameSize = m_simulation->conveyorBelt()->usableWidth();
 
-        delete m_frame;
-        m_frame = m_simulation->frameFromCamera(10, 0, 280, 600);
+    while (true) {
+        QImage *frame = m_simulation->frameFromCamera();
+
+        sem_wait(&m_anomalySem);
+
+        m_anomalyFrame = frame->copy(0, anomalyGrabY - frameSize/2, frameSize,
+                                     frameSize);
 
         sem_post(&m_anomalySem);
-        sem_post(&m_stackingSem);
-
         sem_post(&m_anomalySynch);
+        emit anomalyFrameUpdated();
+
+        sem_wait(&m_stackingSem);
+        
+        m_stackingFrame = frame->copy(0, stackingGrabY - frameSize/2, frameSize,
+                                      frameSize);
+        
+        sem_post(&m_stackingSem);
         sem_post(&m_stackingSynch);
+        emit stackingFrameUpdated();
+
+        delete frame;
+
         millisleep(100);
     }
 }
 
 void Controller::anomalyThread() {
-    int grabPointY = -1;
-    int endPointY;
     Shape shape = Shape::None;
+    double grabY = m_simulation->conveyorBelt()->usableWidth()/2;
+    double maxGrabY =
+        grabY + m_simulation->anomalyRobot()->armSize().height()/2;
 
     while (true) {
         sem_wait(&m_anomalySynch);
         sem_wait(&m_anomalySem);
-        // TODO: should not be literal
-        QImage frame = m_frame->copy(0, 90, 280, 280);
+        
+        cv::Mat src = QImage2Mat(m_anomalyFrame);
+        
         sem_post(&m_anomalySem);
-
-        cv::Mat src = QImage2Mat(frame);
-        std::vector<std::vector<cv::Point>> contours;
-
+        
         preprocess(src);
+        
+        std::vector<std::vector<cv::Point>> contours;
         cv::findContours(src, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-
-        for (int i = 0; i < (int) contours.size(); i++) {            
+        for (int i = 0; i < (int) contours.size(); i++) {
             cv::Rect boundingRect = cv::boundingRect(contours[i]);
-            std::vector<cv::Point> approx;                    
+
+            if (boundingRect.y > maxGrabY) {
+                shape = Shape::None;
+                continue;
+            }
+            
+            std::vector<cv::Point> approx;
             cv::approxPolyDP(contours[i], approx,
-                            cv::arcLength(contours[i], true)*0.012, true);
-            
-            // Calibration phase: calculate robot grabpoint
-            if (grabPointY == -1 && (cv::isContourConvex(approx) && boundingRect.x == 0)) {
-                grabPointY = boundingRect.y + boundingRect.height/2;
-                endPointY = boundingRect.y + boundingRect.height;
+                             cv::arcLength(contours[i], true)*0.012, true);
+            double area = std::fabs(cv::contourArea(contours[i]));
+            if (area < m_simulation->minItemArea()*0.96
+                    || boundingRect.y == 0
+                    || (cv::isContourConvex(approx) && boundingRect.x == 0)) {
+                continue;
             }
             
-            if (std::fabs(cv::contourArea(contours[i])) < m_simulation->minItemArea(0.04)
-                    || boundingRect.y == 0 || boundingRect.y >= endPointY ||  (cv::isContourConvex(approx) && boundingRect.x == 0)) {
-                
-                if (boundingRect.y > endPointY && shape != Shape::None) {
-                    shape = Shape::None;
-                }                
-                continue;  
-            }
-
-            if (shape == Shape::None)                
-                shape = shapeDetection(contours[i]);        
-
-            // TODO: check for some kind of anomaly           
+            if (shape == Shape::None)
+                shape = shapeDetection(contours[i]);
+            
+            if (shape == Shape::None)
+                continue;
+         
             if ((shape == Shape::Ellipse || shape == Shape::Circle)
-                    && boundingRect.y + boundingRect.height/2 >= grabPointY) {
-                // Deny access to camera while trashing items
-                sem_wait(&m_stackingSem);
+                    && boundingRect.y + boundingRect.height/2 >= grabY) {
                 m_simulation->anomalyRobot()->grab();
                 m_simulation->anomalyRobot()->rotateToEnd();
                 m_simulation->anomalyRobot()->release();
                 m_simulation->anomalyRobot()->rotateToStart();
-                sem_post(&m_stackingSem);
-                shape = Shape::None;                             
-            }            
-           
+                shape = Shape::None;
+            }
         }
     }
 }
 
 void Controller::stackingThread() {
-    int stackingPointY = -1;
-    int endPointY;    
     bool calc = false;
-    // Need to know where robot is located with respect to the camera
-    m_simulation->stackingRobot()->rotateToEnd();
+    double grabY = m_simulation->conveyorBelt()->usableWidth()/2;
+    double maxGrabY =
+        grabY + m_simulation->stackingRobot()->armSize().height() / 2;
+    double angle;
 
     while (true) {
         sem_wait(&m_stackingSynch);
         sem_wait(&m_stackingSem);
-        // TODO: should not be literal
-        QImage frame = m_frame->copy(0, 280, 280, 280);
+        
+        cv::Mat src = QImage2Mat(m_stackingFrame);
+
         sem_post(&m_stackingSem);
 
-        cv::Mat src = QImage2Mat(frame);
-        std::vector<std::vector<cv::Point>> contours;
-
         preprocess(src);
+
+        std::vector<std::vector<cv::Point>> contours;
         cv::findContours(src, contours, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
         for (int i = 0; i < (int) contours.size(); i++) {
             cv::Rect boundingRect = cv::boundingRect(contours[i]);
-            
-            // Calibration phase: calculate robot grabpoint
-            if (stackingPointY == -1 && (cv::isContourConvex(contours[i]) && boundingRect.x == 0)) {
-                stackingPointY = boundingRect.y + boundingRect.height/2;
-                endPointY = boundingRect.y + boundingRect.height;                
-                m_simulation->stackingRobot()->rotateToStart();
-            }
-            
-            if (std::fabs(cv::contourArea(contours[i])) < m_simulation->minItemArea(0.04)
-                    || boundingRect.y == 0 || boundingRect.y >= endPointY ||  (cv::isContourConvex(contours[i]) && boundingRect.x == 0)) {
 
-                if (boundingRect.y > endPointY && calc)
-                    calc = false;
+            if (boundingRect.y > maxGrabY) {
+                calc = false;
                 continue;
-            }            
+            }
+
+            double area = std::fabs(cv::contourArea(contours[i]));
+            if (area < m_simulation->minItemArea()*0.96
+                    || boundingRect.y == 0
+                    || (cv::isContourConvex(contours[i])
+                        && boundingRect.x == 0)) {
+                continue;
+            }
 
             if (!calc) {
-                cv::RotatedRect rot = cv::minAreaRect(contours[i]);                
+                cv::RotatedRect rot = cv::minAreaRect(contours[i]);
                 calc = true;
-                m_simulation->stackingRobot()->setChildItemRotation(rot.angle);
+                angle = rot.angle;
+                m_simulation->stackingRobot()->scheduleItemRotation(angle);
                 m_simulation->stackingRobot()->grab();
                 m_simulation->stackingRobot()->rotateToEnd();
             }
-                    
-            if (boundingRect.y + boundingRect.height/2 >= stackingPointY && calc && (int)contours.size() == 1 && boundingRect.x == 0) {
+
+            if (calc && boundingRect.y + boundingRect.height/2 >= grabY
+                    && (int) contours.size() == 1 && boundingRect.x == 0) {
                 m_simulation->stackingRobot()->release();
                 m_simulation->stackingRobot()->rotateToStart();
-                                
-            }            
-           
+                break;
+            }
         }
     }
 }

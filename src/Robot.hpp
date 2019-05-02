@@ -7,20 +7,24 @@
 
 class QGraphicsRectItem;
 
+/** The robot class represents a robot that can grab an item, rotate, and
+ *  release it. It can also rotate itself over its pivot, so it can be used for
+ *  any task that involves moving items. The item rotation happens while the
+ *  robot's arm is moving. */
 class Robot : public QObject, public QGraphicsItem 
 {
     Q_OBJECT
     Q_INTERFACES(QGraphicsItem)
 
 public:
-    static const double DEFAULT_ROTATION_SPEED;
+    static Qt::ConnectionType determineConnectionType();
 
     Robot(const QSizeF &baseSize, const QSizeF &armSize, double startAngle = 0,
           double endAngle = 180, QGraphicsItem *parent = nullptr);
     
-    QRectF boundingRect() const;
+    QRectF boundingRect() const override;
 
-    QPoint grabPoint() const;
+    QSizeF armSize() const { return m_armSize; }
 
     double rotationSpeed() const { return m_rotationSpeed; }
     void setRotationSpeed(double rotationSpeed);
@@ -29,42 +33,37 @@ public:
     double endAngle() const { return m_endAngle; }
     void setStartEndAngle(double startAngle, double endAngle);
 
-    void setChildItemRotation(const double angle);
-
-    static Qt::ConnectionType determineConnectionType();
-
 public slots:
     void grab();
     void release();
     void rotateToEnd();
     void rotateToStart();
+    void scheduleItemRotation(double angle);
     
 private:
-    Q_PROPERTY (double armRotation READ armRotation WRITE setArmRotation)
+    Q_PROPERTY(double armRotation READ armRotation WRITE setArmRotation)
+    Q_PROPERTY(double itemRotation READ itemRotation WRITE setItemRotation)
 
-    Q_PROPERTY (double childItemRotation READ childItemRotation WRITE _setChildItemRotation)
-
+    QGraphicsItem *m_item = nullptr;
+    double m_scheduledItemRotation = 0;
+    double m_rotationSpeed = 260;
+    QGraphicsRectItem *m_arm;
     QSizeF m_baseSize;
     QSizeF m_armSize;
-    QGraphicsRectItem *m_arm;
-    double m_rotationSpeed;
-    QGraphicsItem *m_item;
-    double m_startAngle;
     double m_endAngle;
     QMutex m_executing;
-
-    double m_childItemRotation = 0;
-
-    double armRotation() const { return m_arm->rotation(); }
-    void setArmRotation(double rotation);
-
-    double childItemRotation() const; 
-    void _setChildItemRotation(const double angle);
+    double m_startAngle;
 
     virtual void paint(QPainter *painter,
                        const QStyleOptionGraphicsItem *option,
                        QWidget *widget = nullptr) override;
-    
+
+    double armRotation() const { return m_arm->rotation(); }
+    void setArmRotation(double rotation);
+
+    double itemRotation() const;
+    void setItemRotation(double angle);
+
     QGraphicsItem *itemBelowArm();
 
 private slots:

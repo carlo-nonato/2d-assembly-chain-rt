@@ -19,7 +19,8 @@ RESOURCES = AssemblyChain.qrc
 HEADERS += src/MainWindow.hpp \
            src/Controller.hpp \
            src/ConveyorBelt.hpp \
-           src/CVUtils.hpp \
+           src/cvutils.hpp \
+           src/graphicsutils.hpp \
            src/ItemStack.hpp \
            src/randint.hpp \
            src/Robot.hpp \
@@ -27,10 +28,11 @@ HEADERS += src/MainWindow.hpp \
 
 SOURCES += src/Controller.cpp \
            src/ConveyorBelt.cpp \
-           src/CVUtils.cpp \
+           src/cvutils.cpp \
+           src/graphicsutils.cpp \
+           src/ItemStack.cpp \
            src/main.cpp \
            src/MainWindow.cpp \
-           src/ItemStack.cpp \
            src/randint.cpp \
            src/Robot.cpp \
            src/Simulation.cpp \

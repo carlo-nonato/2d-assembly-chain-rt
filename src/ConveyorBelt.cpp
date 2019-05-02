@@ -2,12 +2,12 @@
 
 #include <QPainter>
 
-const double ConveyorBelt::DEFAULT_SPEED = 2;
-
 ConveyorBelt::ConveyorBelt(const QRectF &rect, QGraphicsItem *parent) 
-: QGraphicsRectItem(rect, parent),
-  m_level(0),
-  m_speed(ConveyorBelt::DEFAULT_SPEED) {}
+: QGraphicsRectItem(rect, parent) {}
+
+void ConveyorBelt::setBarsWidth(int barsWidth) {
+    m_barsWidth = barsWidth;
+}
 
 void ConveyorBelt::setSpeed(double speed) {
     m_speed = speed;
@@ -51,8 +51,9 @@ void ConveyorBelt::paint(QPainter *painter,
 
     painter->setBrush(Qt::white);
     painter->setPen(Qt::NoPen);
-    painter->drawRect(0, 0, 10, rect().height());
-    painter->drawRect(rect().width() -10, 0, 10, rect().height());
+    painter->drawRect(0, 0, m_barsWidth, rect().height());
+    painter->drawRect(rect().width() - m_barsWidth, 0,
+                      m_barsWidth, rect().height());
 
     painter->setBrush(oldBrush);
     painter->setPen(oldPen);

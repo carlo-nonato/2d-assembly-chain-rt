@@ -6,10 +6,9 @@
 class ConveyorBelt;
 class Robot;
 
-/* This class represents the world and is responsible of everyhing that the
- * controller can interact with such as the conveyor belt, the robots and the
- * camera.
- */
+/** The Simulation class represents the world and is responsible of everyhing
+ * that the controller can interact with such as the conveyor belt, the robots
+ * and the camera. */
 class Simulation : public QGraphicsScene
 {
     Q_OBJECT
@@ -17,28 +16,29 @@ class Simulation : public QGraphicsScene
 public:
     Simulation();
 
-    ConveyorBelt *conveyorBelt() { return m_conveyorBelt; }
-    Robot *anomalyRobot() { return m_anomalyRobot; }
-    Robot *stackingRobot() { return m_stackingRobot; }
+    ConveyorBelt* conveyorBelt() { return m_conveyorBelt; }
+    Robot* anomalyRobot() { return m_anomalyRobot; }
+    Robot* stackingRobot() { return m_stackingRobot; }
     
-    /*
-     * Return the minimum calculable area with an epsilon error
-    */
-    int minItemArea(double epsilon = 0) { return (m_minItemArea - m_minItemArea * epsilon); }
-    static void rotateAroundCenter(QGraphicsItem *item, qreal angle);
+    void setItemSizeRange(int minWidth, int minHeight, int maxWidth,
+                          int maxHeight);
+    int minItemArea() const;
 
 public slots:
-    QImage* frameFromCamera(int x, int y, int width, int height);
+    QImage* frameFromCamera();
 
 private:
+    int m_minItemWidth = 60;
+    int m_minItemHeight = 60;
+    int m_maxItemWidth = 90;
+    int m_maxItemHeight = 90;
     ConveyorBelt *m_conveyorBelt;
     Robot *m_anomalyRobot;
     Robot *m_stackingRobot;
-    int m_minItemArea = 3600;    
 
 private slots:
-    void createItem(int minWidth = 60, int minHeight = 60, int maxWidth = 90, int maxHeight = 90);
-    QImage* _frameFromCamera(int x, int y, int width, int height);
+    void createItem();
+    QImage* _frameFromCamera();
 };
 
 #endif // SIMULATION_HPP
