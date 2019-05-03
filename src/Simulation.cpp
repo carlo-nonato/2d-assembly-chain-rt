@@ -96,19 +96,19 @@ void Simulation::createItem() {
     QAbstractGraphicsShapeItem *item;
     QColor color(randint(60, 255), randint(60, 255), randint(60, 255), 255);
     while (isColorDark(color)) {
-        color = QColor(randint(60, 255), randint(60, 255), randint(60, 255), 255);
+        color = QColor(randint(60, 255), randint(60, 255), randint(60, 255),
+                       255);
     }
 
     int width = randint(m_minItemWidth, m_maxItemWidth);
     int height = randint(m_minItemHeight, m_maxItemHeight);
 
     int choice = randint(0, 2);
-
     if (choice == 0)
         item = new QGraphicsRectItem(0, 0, width, height, m_conveyorBelt);
     else if (choice == 1)
         item = new QGraphicsEllipseItem(0, 0, width, height, m_conveyorBelt);
-    else if (choice == 2)
+    else
         item = octagonItem(0, 0, width, height, m_conveyorBelt);
 
     item->setPen(Qt::NoPen);
