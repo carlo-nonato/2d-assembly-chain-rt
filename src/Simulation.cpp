@@ -95,14 +95,21 @@ QImage* Simulation::_frameFromCamera() {
 void Simulation::createItem() {   
     QAbstractGraphicsShapeItem *item;
     QColor color(randint(60, 255), randint(60, 255), randint(60, 255), 255);
+    while (isColorDark(color)) {
+        color = QColor(randint(60, 255), randint(60, 255), randint(60, 255), 255);
+    }
 
     int width = randint(m_minItemWidth, m_maxItemWidth);
     int height = randint(m_minItemHeight, m_maxItemHeight);
 
-    if (randint(0, 1) == 0)
+    int choice = randint(0, 2);
+
+    if (choice == 0)
         item = new QGraphicsRectItem(0, 0, width, height, m_conveyorBelt);
-    else
+    else if (choice == 1)
         item = new QGraphicsEllipseItem(0, 0, width, height, m_conveyorBelt);
+    else if (choice == 2)
+        item = octagonItem(0, 0, width, height, m_conveyorBelt);
 
     item->setPen(Qt::NoPen);
     item->setBrush(color);

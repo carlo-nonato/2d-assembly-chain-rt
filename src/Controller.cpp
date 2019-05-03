@@ -110,7 +110,7 @@ void Controller::anomalyThread() {
             if (shape == Shape::None)
                 continue;
          
-            if ((shape == Shape::Ellipse || shape == Shape::Circle)
+            if ((shape != Shape::Rect && shape != Shape::Square)
                     && boundingRect.y + boundingRect.height/2 >= grabY) {
                 m_simulation->anomalyRobot()->grab();
                 m_simulation->anomalyRobot()->rotateToEnd();

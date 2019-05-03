@@ -78,6 +78,8 @@ Shape shapeDetection(std::vector<cv::Point> contour) {
         else if (vtc == 6 && mincos >= -0.55 && maxcos <= -0.45)                   
             return Shape::Hexagon;
     }
+    else if (approx.size() == 8)
+        return Shape::Octagon;
     else if (boundingRect.width == boundingRect.height)
         return Shape::Circle;
     return Shape::Ellipse;
