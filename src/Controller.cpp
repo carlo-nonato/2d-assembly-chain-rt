@@ -34,6 +34,39 @@ void Controller::start() {
     pthread_attr_destroy(&attr);
 }
 
+void* Controller::anomalyThreadHelper(void *arg) {
+    ((Controller *) arg)->anomalyThread();
+    return nullptr;
+}
+
+void* Controller::stackingThreadHelper(void *arg) {
+    ((Controller *) arg)->stackingThread();
+    return nullptr;
+}
+
+void* Controller::updateFrameThreadHelper(void *arg) {
+    ((Controller *) arg)->updateFrameThread();
+    return nullptr;
+}
+
+bool Controller::isIgnorable(std::vector<cv::Point> contour,
+                             double maxGrabY) const {
+    cv::Rect boundingRect = cv::boundingRect(contour);
+
+    if (boundingRect.y > maxGrabY)
+        return true;
+    
+    std::vector<cv::Point> approx;
+    cv::approxPolyDP(contour, approx, cv::arcLength(contour, true)*0.012, true);
+    double area = std::fabs(cv::contourArea(contour));
+    if (area < m_simulation->minItemArea()*0.96
+            || boundingRect.y == 0
+            || (cv::isContourConvex(approx) && boundingRect.x == 0)) {
+        return true;
+    }
+    return false;
+}
+
 void Controller::updateFrameThread() {
     QRectF anomalySBR = m_simulation->anomalyRobot()->sceneBoundingRect();
     QRectF stackingSBR = m_simulation->stackingRobot()->sceneBoundingRect();
@@ -89,26 +122,15 @@ void Controller::anomalyThread() {
         for (int i = 0; i < (int) contours.size(); i++) {
             cv::Rect boundingRect = cv::boundingRect(contours[i]);
 
-            if (boundingRect.y > maxGrabY) {
+            if (isIgnorable(contours[i], maxGrabY)) {
                 shape = Shape::None;
                 continue;
             }
             
-            std::vector<cv::Point> approx;
-            cv::approxPolyDP(contours[i], approx,
-                             cv::arcLength(contours[i], true)*0.012, true);
-            double area = std::fabs(cv::contourArea(contours[i]));
-            if (area < m_simulation->minItemArea()*0.96
-                    || boundingRect.y == 0
-                    || (cv::isContourConvex(approx) && boundingRect.x == 0)) {
-                continue;
+            if (shape == Shape::None) {
+                if ((shape = shapeDetection(contours[i])) == Shape::None)
+                    continue;
             }
-            
-            if (shape == Shape::None)
-                shape = shapeDetection(contours[i]);
-            
-            if (shape == Shape::None)
-                continue;
          
             if ((shape != Shape::Rect && shape != Shape::Square)
                     && boundingRect.y + boundingRect.height/2 >= grabY) {
@@ -127,7 +149,6 @@ void Controller::stackingThread() {
     double grabY = m_simulation->conveyorBelt()->usableWidth()/2;
     double maxGrabY =
         grabY + m_simulation->stackingRobot()->armSize().height() / 2;
-    double angle;
 
     while (true) {
         sem_wait(&m_stackingSynch);
@@ -144,24 +165,15 @@ void Controller::stackingThread() {
         for (int i = 0; i < (int) contours.size(); i++) {
             cv::Rect boundingRect = cv::boundingRect(contours[i]);
 
-            if (boundingRect.y > maxGrabY) {
+            if (isIgnorable(contours[i], maxGrabY)) {
                 calc = false;
-                continue;
-            }
-
-            double area = std::fabs(cv::contourArea(contours[i]));
-            if (area < m_simulation->minItemArea()*0.96
-                    || boundingRect.y == 0
-                    || (cv::isContourConvex(contours[i])
-                        && boundingRect.x == 0)) {
                 continue;
             }
 
             if (!calc) {
                 cv::RotatedRect rot = cv::minAreaRect(contours[i]);
                 calc = true;
-                angle = rot.angle;
-                m_simulation->stackingRobot()->scheduleItemRotation(angle);
+                m_simulation->stackingRobot()->scheduleItemRotation(rot.angle);
                 m_simulation->stackingRobot()->grab();
                 m_simulation->stackingRobot()->rotateToEnd();
             }
@@ -174,19 +186,4 @@ void Controller::stackingThread() {
             }
         }
     }
-}
-
-void* Controller::anomalyThreadHelper(void *arg) {
-    ((Controller *) arg)->anomalyThread();
-    return nullptr;
-}
-
-void* Controller::stackingThreadHelper(void *arg) {
-    ((Controller *) arg)->stackingThread();
-    return nullptr;
-}
-
-void* Controller::updateFrameThreadHelper(void *arg) {
-    ((Controller *) arg)->updateFrameThread();
-    return nullptr;
 }

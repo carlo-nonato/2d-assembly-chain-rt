@@ -16,30 +16,28 @@ bool isColorDark(QColor color) {
 
 QAbstractGraphicsShapeItem *octagonItem(int x, int y, int width, int height,
                                         QGraphicsItem *parent) {
-    QRectF rect(x, y, width, height);        
+    qreal startBottomX1 = width/3;
+    qreal startBottomY1 = height;
 
-    qreal startBottomX1 = rect.width()/3;
-    qreal startBottomY1 = rect.height();
-
-    qreal endBottomX1 = rect.width()/3*2;
-    qreal endBottomY1 = rect.height();
+    qreal endBottomX1 = width/3*2;
+    qreal endBottomY1 = height;
     
-    qreal startRX2 = rect.width();
-    qreal startRY2 = rect.height()/3*2;
+    qreal startRX2 = width;
+    qreal startRY2 = height/3*2;
 
-    qreal endRX2 = rect.width();
-    qreal endRY2 = rect.height()/3;
+    qreal endRX2 = width;
+    qreal endRY2 = height/3;
 
     qreal startTopX3 = endBottomX1;
-    qreal startTopY3 = rect.y();
+    qreal startTopY3 = y;
 
     qreal endTopX3 = startBottomX1;
-    qreal endTopY3 = rect.y();
+    qreal endTopY3 = y;
 
-    qreal startLX4 = endRX2 - rect.width();
+    qreal startLX4 = endRX2 - width;
     qreal startLY4 = endRY2;
 
-    qreal endLX4 = startRX2 - rect.width();
+    qreal endLX4 = startRX2 - width;
     qreal endLY4 = startRY2;
 
     QPainterPath path;
@@ -54,7 +52,5 @@ QAbstractGraphicsShapeItem *octagonItem(int x, int y, int width, int height,
     path.lineTo(startLX4, startLY4);
     path.lineTo(endLX4, endLY4);
 
-    QAbstractGraphicsShapeItem *item = new QGraphicsPathItem(path, parent);
-
-    return item;
+    return new QGraphicsPathItem(path, parent);
 }

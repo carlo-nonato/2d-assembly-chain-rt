@@ -92,7 +92,7 @@ QImage* Simulation::_frameFromCamera() {
     return frame;
 }
 
-void Simulation::createItem() {   
+void Simulation::createItem() {
     QAbstractGraphicsShapeItem *item;
     QColor color(randint(60, 255), randint(60, 255), randint(60, 255), 255);
     while (isColorDark(color)) {
@@ -103,10 +103,12 @@ void Simulation::createItem() {
     int width = randint(m_minItemWidth, m_maxItemWidth);
     int height = randint(m_minItemHeight, m_maxItemHeight);
 
-    int choice = randint(0, 2);
-    if (choice == 0)
+    int shape = randint(0, 3);
+    if (shape == 0)
         item = new QGraphicsRectItem(0, 0, width, height, m_conveyorBelt);
-    else if (choice == 1)
+    else if (shape == 1)
+        item = new QGraphicsRectItem(0, 0, width, width, m_conveyorBelt);
+    else if (shape == 2)
         item = new QGraphicsEllipseItem(0, 0, width, height, m_conveyorBelt);
     else
         item = octagonItem(0, 0, width, height, m_conveyorBelt);
